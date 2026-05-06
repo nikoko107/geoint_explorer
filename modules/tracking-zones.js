@@ -21,17 +21,12 @@ let _mapAnalysis = null;
 let _zones       = [];
 
 // État de dessin
-let _drawMode  = null; // null | 'rect' | 'poly'
-let _polyPoints = [];  // [{lng, lat}]
+let _drawMode   = null; // null | 'poly'
+let _polyPoints = [];   // [{lng, lat}]
 
 // Handlers DOM détachables
-let _onPolyClick    = null;
-let _onPolyMove     = null;
-let _onRectDown     = null;
-
-// Élément de preview rectangle (DOM)
-let _rectEl = null;
-let _rectStart = null;
+let _onPolyClick = null;
+let _onPolyMove  = null;
 
 // ── Init ──────────────────────────────────────────────────────────
 
@@ -252,63 +247,6 @@ function _updatePolyPreview(cursorLngLat) {
   _map.getSource(PREVIEW_SOURCE).setData({ type: 'FeatureCollection', features });
 }
 
-// ── Mode rectangle ────────────────────────────────────────────────
-
-function _enterRectMode() {
-  _drawMode = 'rect';
-  document.body.classList.add('draw-rect-mode');
-  document.getElementById('btn-draw-rect')?.classList.add('active');
-
-  const canvas = _map.getCanvas();
-
-  _onRectDown = e => {
-    e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    _rectStart = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-
-    _rectEl = document.createElement('div');
-    Object.assign(_rectEl.style, {
-      position: 'absolute', border: '2px dashed #22c55e',
-      background: 'rgba(34,197,94,0.08)', pointerEvents: 'none', zIndex: '20',
-    });
-    _map.getContainer().appendChild(_rectEl);
-
-    const onMove = ev => {
-      if (!_rectStart || !_rectEl) return;
-      const r  = canvas.getBoundingClientRect();
-      const x  = ev.clientX - r.left, y = ev.clientY - r.top;
-      _rectEl.style.left   = `${Math.min(_rectStart.x, x)}px`;
-      _rectEl.style.top    = `${Math.min(_rectStart.y, y)}px`;
-      _rectEl.style.width  = `${Math.abs(x - _rectStart.x)}px`;
-      _rectEl.style.height = `${Math.abs(y - _rectStart.y)}px`;
-    };
-
-    const onUp = ev => {
-      canvas.removeEventListener('mousemove', onMove);
-      _rectEl?.remove(); _rectEl = null;
-
-      const r = canvas.getBoundingClientRect();
-      const x = ev.clientX - r.left, y = ev.clientY - r.top;
-
-      if (Math.abs(x - _rectStart.x) < 10 || Math.abs(y - _rectStart.y) < 10) {
-        _exitDrawMode(); return;
-      }
-
-      const sw = _map.unproject([Math.min(_rectStart.x, x), Math.max(_rectStart.y, y)]);
-      const ne = _map.unproject([Math.max(_rectStart.x, x), Math.min(_rectStart.y, y)]);
-      const bbox = [sw.lng, sw.lat, ne.lng, ne.lat];
-
-      _exitDrawMode();
-      _openNewZonePopup({ shapeType: 'rect', bbox });
-    };
-
-    canvas.addEventListener('mousemove', onMove);
-    canvas.addEventListener('mouseup', onUp, { once: true });
-  };
-
-  canvas.addEventListener('mousedown', _onRectDown, { once: true });
-}
-
 // ── Mode polygone ─────────────────────────────────────────────────
 
 function _enterPolyMode() {
@@ -379,13 +317,6 @@ function _exitDrawMode() {
     _polyPoints = [];
     _clearPreview();
   }
-
-  if (_drawMode === 'rect') {
-    document.body.classList.remove('draw-rect-mode');
-    document.getElementById('btn-draw-rect')?.classList.remove('active');
-    _rectEl?.remove(); _rectEl = null;
-  }
-
   _drawMode = null;
 }
 
@@ -564,11 +495,6 @@ function _hideTooltip() { _tooltip?.remove(); }
 // ── Câblage UI ────────────────────────────────────────────────────
 
 function _wireUI() {
-  document.getElementById('btn-draw-rect')?.addEventListener('click', () => {
-    if (_drawMode === 'rect') _exitDrawMode();
-    else { _exitDrawMode(); _enterRectMode(); }
-  });
-
   document.getElementById('btn-draw-poly')?.addEventListener('click', () => {
     if (_drawMode === 'poly') _exitDrawMode();
     else { _exitDrawMode(); _enterPolyMode(); }
