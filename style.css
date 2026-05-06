@@ -180,8 +180,11 @@ body {
   gap: 6px;
   flex-shrink: 0;
   z-index: 100;
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: none;
 }
+#control-bar::-webkit-scrollbar { display: none; }
 
 .control-group {
   display: flex;

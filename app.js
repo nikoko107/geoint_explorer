@@ -251,8 +251,18 @@ function tryInit() {
   initExport();
 
   // Réinitialisation historique de navigation
+  const resetPopup = document.getElementById('reset-navlog-popup');
   document.getElementById('btn-reset-navlog')?.addEventListener('click', () => {
-    if (!confirm('Vider tout l\'historique de navigation de ce projet ? Les annotations et zones manuelles sont conservées.')) return;
+    resetPopup?.classList.remove('hidden');
+  });
+  document.getElementById('btn-close-reset-popup')?.addEventListener('click', () => {
+    resetPopup?.classList.add('hidden');
+  });
+  document.getElementById('btn-cancel-reset-navlog')?.addEventListener('click', () => {
+    resetPopup?.classList.add('hidden');
+  });
+  document.getElementById('btn-confirm-reset-navlog')?.addEventListener('click', () => {
+    resetPopup?.classList.add('hidden');
     resetNavLog();
   });
 
