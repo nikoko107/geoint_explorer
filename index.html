@@ -87,7 +87,7 @@
     <div class="control-group">
       <button id="btn-draw-poly" class="btn-control" title="Dessiner une zone (polygone libre)">✏ Zone</button>
       <button id="btn-zones-list" class="btn-control" title="Liste des zones">≡ Zones</button>
-      <button id="btn-reset-navlog" class="btn-control btn-danger-soft" title="Vider l'historique de navigation (zones de suivi automatiques)">↺ Nav.</button>
+      <button id="btn-reset-navlog" class="btn-control btn-danger-soft" title="Vider l'historique de navigation — annotations et zones manuelles conservées">↺ Reset</button>
     </div>
 
     <!-- Vue terrain -->
@@ -195,6 +195,22 @@
       <button id="btn-toggle-zone-status" class="btn-secondary hidden">Passer à Traité</button>
       <button id="btn-delete-zone" class="btn-danger hidden">Supprimer</button>
       <button id="btn-cancel-zone" class="btn-secondary">Annuler</button>
+    </div>
+  </div>
+
+  <!-- Popup confirmation reset navlog -->
+  <div id="reset-navlog-popup" class="floating-popup hidden">
+    <div class="popup-header">
+      <span>Réinitialiser l'historique</span>
+      <button id="btn-close-reset-popup" class="btn-icon">✕</button>
+    </div>
+    <div class="popup-body">
+      <p class="popup-field">Vider tout l'historique de navigation de ce projet ?</p>
+      <p class="popup-meta">Les annotations et zones manuelles sont conservées.</p>
+    </div>
+    <div class="popup-footer">
+      <button id="btn-confirm-reset-navlog" class="btn-danger">↺ Vider l'historique</button>
+      <button id="btn-cancel-reset-navlog" class="btn-secondary">Annuler</button>
     </div>
   </div>
 
