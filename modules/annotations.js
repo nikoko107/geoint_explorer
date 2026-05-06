@@ -3,7 +3,11 @@ import { saveActiveProject } from './projects.js';
 const SOURCE_ID = 'annotations-source';
 const LAYER_ID  = 'annotations-layer';
 
-let _map = null;
+const TRACKING_SOURCE_ID = 'annotations-tracking-source';
+const TRACKING_LAYER_ID  = 'annotations-tracking-layer';
+
+let _map         = null;
+let _mapTracking = null;
 let _annotations = [];
 let _annotationMode = false;
 let _editingId = null;
@@ -33,11 +37,47 @@ export function initAnnotations(map, initialAnnotations) {
 export function reloadAnnotations(annotations) {
   _annotations = annotations || [];
   _renderAnnotations();
+  _renderAnnotationsTracking();
   _refreshAnnotationsList();
 }
 
 export function getAnnotations() {
   return _annotations;
+}
+
+export function initAnnotationsTracking(mapTracking) {
+  _mapTracking = mapTracking;
+  if (_mapTracking.getSource(TRACKING_SOURCE_ID)) return;
+
+  _mapTracking.addSource(TRACKING_SOURCE_ID, {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] },
+  });
+
+  _mapTracking.addLayer({
+    id: TRACKING_LAYER_ID,
+    type: 'circle',
+    source: TRACKING_SOURCE_ID,
+    paint: {
+      'circle-radius': 5,
+      'circle-color': ['get', 'color'],
+      'circle-stroke-width': 1,
+      'circle-stroke-color': '#fff',
+      'circle-opacity': 0.85,
+    },
+  });
+
+  _renderAnnotationsTracking();
+}
+
+function _renderAnnotationsTracking() {
+  if (!_mapTracking?.getSource(TRACKING_SOURCE_ID)) return;
+  const features = _annotations.map(ann => ({
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: ann.coords },
+    properties: { color: CATEGORY_COLORS[ann.category] || '#94a3b8' },
+  }));
+  _mapTracking.getSource(TRACKING_SOURCE_ID).setData({ type: 'FeatureCollection', features });
 }
 
 // ── Source GeoJSON ────────────────────────────────────────────────
@@ -108,6 +148,7 @@ function _renderAnnotations() {
   }));
 
   _map.getSource(SOURCE_ID).setData({ type: 'FeatureCollection', features });
+  _renderAnnotationsTracking();
 }
 
 // ── Mode annotation ───────────────────────────────────────────────

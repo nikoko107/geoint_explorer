@@ -1,8 +1,8 @@
 import { initStorage }        from './modules/storage.js';
 import { initProjects, getActiveProject, saveActiveProject, getActiveId } from './modules/projects.js';
 import { initLayers, initLayersPanel, reloadLayers, getLayerConfig } from './modules/layers.js';
-import { initTracker, initNavLogPanel, reloadNavLog }    from './modules/tracker.js';
-import { initAnnotations, initAnnotationsPanel, reloadAnnotations } from './modules/annotations.js';
+import { initTracker, reloadNavLog }    from './modules/tracker.js';
+import { initAnnotations, initAnnotationsPanel, initAnnotationsTracking, reloadAnnotations } from './modules/annotations.js';
 import { initTrackingZones, reloadZones }                from './modules/tracking-zones.js';
 import { initExport }          from './modules/export.js';
 
@@ -231,20 +231,21 @@ function tryInit() {
     initLayers(mapAnalysis, project.layerConfig || []);
     initTracker(mapAnalysis, mapTracking, project.navLog || []);
     initAnnotations(mapAnalysis, project.annotations || []);
+    initAnnotationsTracking(mapTracking);
     initTrackingZones(mapTracking, mapAnalysis, project.trackingZones || []);
   } else {
     initLayers(mapAnalysis, []);
     initTracker(mapAnalysis, mapTracking, []);
     initAnnotations(mapAnalysis, []);
+    initAnnotationsTracking(mapTracking);
     initTrackingZones(mapTracking, mapAnalysis, []);
   }
 
   // Panneau couches
   initLayersPanel();
 
-  // Panneaux annotations et navLog
+  // Panneau annotations
   initAnnotationsPanel();
-  initNavLogPanel(mapAnalysis);
 
   // Export
   initExport();
