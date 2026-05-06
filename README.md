@@ -21,14 +21,14 @@ python3 -m http.server 8080
 ┌─────────────────────────────────────────────────────────────┐
 │  PROJET : [Projet actif ▼]  [+ Nouveau]  [🗑]               │
 ├──────────────────────────┬──────────────────────────────────┤
-│                          │                                  │
+│  [🔍 Recherche]          │                                  │
 │    CARTE D'ANALYSE       │    CARTE DE SUIVI                │
 │    (travail en cours)    │    (avancement global)           │
 │                          │                                  │
 │  ← séparateur draggable →│                                  │
 ├──────────────────────────┴──────────────────────────────────┤
-│ [Adresse] [Couches] [📌 Annoter] [⬜ Rectangle] [⬡ Polygone] │
-│ [🚶 Street View] [📷 Mapillary] [🌐 Panoramax] [↓ Export]   │
+│ [Couches] [📌 Annoter] [≡ Annotations] [✏ Zone] [≡ Zones]  │
+│ [🚶 Street View] [📷 Mapillary] [🌐 Panoramax] [↓ Export]  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -122,8 +122,6 @@ L'enregistrement se déclenche automatiquement sur chaque déplacement **si** :
 
 Les rectangles s'affichent sur la carte de suivi. Si une zone est repassée à un zoom plus faible, la couleur du **niveau le plus élevé** historique est conservée.
 
-Le bouton **🗺 Historique** affiche les 20 dernières entrées. Cliquer sur une entrée recentre la carte d'analyse.
-
 ---
 
 ## Zones de suivi
@@ -132,9 +130,9 @@ Délimiter des zones géographiques sur la **carte de suivi** et suivre leur ét
 
 ### Dessiner une zone
 
-**⬜ Rectangle** — cliquer-glisser sur la carte de suivi
+Bouton **✏ Zone** dans la barre de contrôle — active le mode dessin de polygone sur la carte de suivi.
 
-**⬡ Polygone** — cliquer pour poser les sommets, une barre flottante apparaît :
+Cliquer pour poser les sommets, une barre flottante apparaît :
 - **✓ Terminer** — valide le polygone (minimum 3 points)
 - **↩ Annuler dernier** — supprime le dernier sommet
 - **✕ Annuler** — abandonne le tracé
@@ -201,7 +199,7 @@ geoint-explorer/
     ├── layers.js            — couches IGN/Google, sélecteur, opacité
     ├── tracker.js           — navLog automatique, niveaux de couverture
     ├── annotations.js       — marqueurs, popups, liste, filtre
-    ├── tracking-zones.js    — dessin rectangle/polygone, statuts
+    ├── tracking-zones.js    — dessin polygone, statuts zones
     └── export.js            — GeoJSON + CSV
 ```
 
