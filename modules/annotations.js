@@ -229,7 +229,7 @@ function _refreshAnnotationsList() {
   const filterCat = document.getElementById('annotation-filter-category')?.value || '';
 
   const filtered = _annotations.filter(ann => {
-    const matchSearch = !search || ann.label.toLowerCase().includes(search);
+    const matchSearch = !search || (ann.label || '').toLowerCase().includes(search);
     const matchCat = !filterCat || ann.category === filterCat;
     return matchSearch && matchCat;
   });
@@ -241,13 +241,17 @@ function _refreshAnnotationsList() {
   for (const ann of filtered) {
     const li = document.createElement('li');
     const date = new Date(ann.createdAt).toLocaleDateString('fr-FR');
-    li.innerHTML = `
-      <span class="list-dot ${categoryDot(ann.category)}"></span>
-      <div>
-        <div class="list-item-main">${ann.label || '(sans label)'}</div>
-        <div class="list-item-sub">${ann.category} · ${date}</div>
-      </div>
-    `;
+    const dot = document.createElement('span');
+    dot.className = `list-dot ${categoryDot(ann.category)}`;
+    const div = document.createElement('div');
+    const main = document.createElement('div');
+    main.className = 'list-item-main';
+    main.textContent = ann.label || '(sans label)';
+    const sub = document.createElement('div');
+    sub.className = 'list-item-sub';
+    sub.textContent = `${ann.category} · ${date}`;
+    div.append(main, sub);
+    li.append(dot, div);
     li.addEventListener('click', () => {
       _map.flyTo({ center: ann.coords, zoom: 17 });
     });

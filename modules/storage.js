@@ -3,12 +3,32 @@
  * Toutes les lectures/écritures de l'app passent par ce module.
  */
 
+export const STORAGE_SCHEMA_VERSION = 1;
+const SCHEMA_VERSION_KEY = 'geoint_schema_version';
+
 let _onQuotaWarning = null;
 let _onQuotaCritical = null;
 
 export function initStorage({ onQuotaWarning, onQuotaCritical } = {}) {
   _onQuotaWarning = onQuotaWarning || null;
   _onQuotaCritical = onQuotaCritical || null;
+  _checkSchemaVersion();
+}
+
+function _checkSchemaVersion() {
+  const stored = parseInt(localStorage.getItem(SCHEMA_VERSION_KEY) || '0', 10);
+  if (stored < STORAGE_SCHEMA_VERSION) {
+    _migrateSchema(stored, STORAGE_SCHEMA_VERSION);
+    localStorage.setItem(SCHEMA_VERSION_KEY, String(STORAGE_SCHEMA_VERSION));
+  }
+}
+
+// Point d'extension : ajouter des migrations ici quand la structure évolue.
+// ex: if (from < 2) { /* migrer v1 → v2 */ }
+function _migrateSchema(from, _to) {
+  if (from === 0) {
+    // Premier lancement ou données antérieures au versioning : rien à migrer.
+  }
 }
 
 export function storageGet(key) {

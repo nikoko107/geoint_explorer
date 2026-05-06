@@ -636,6 +636,28 @@ button:active { background: #1d2035; }
   user-select: none;
 }
 
+/* ── Tooltip de suivi ────────────────────────────────────────── */
+.tracking-tooltip .maplibregl-popup-content {
+  background: rgba(13, 15, 18, 0.92);
+  color: var(--text);
+  font-size: 11px;
+  font-family: var(--mono);
+  padding: 4px 8px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+.tracking-tooltip .maplibregl-popup-tip { display: none; }
+
+/* ── Erreur géocodage ────────────────────────────────────────── */
+#geocoder-results .result-error {
+  padding: 6px 10px;
+  color: var(--warn);
+  font-size: 12px;
+  cursor: default;
+  pointer-events: none;
+}
+
 /* ── MapLibre overrides ───────────────────────────────────────── */
 .maplibregl-ctrl-bottom-left,
 .maplibregl-ctrl-bottom-right {
