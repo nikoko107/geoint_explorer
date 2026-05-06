@@ -81,8 +81,8 @@ function wmtsUrl(def) {
 function layerId(def) { return `lyr-${def.id}`; }
 function sourceId(def) { return `lyr-${def.id}`; }
 
-// Couche avant laquelle insérer les rasters (annotations, navlog, zones doivent rester dessus)
-const VECTOR_LAYER_IDS = ['annotations-layer', 'navlog-layer-fill', 'zones-fill'];
+// Couche avant laquelle insérer les rasters (tous les layers vectoriels doivent rester dessus)
+const VECTOR_LAYER_IDS = ['zones-analysis-line-halo', 'annotations-layer', 'navlog-layer-fill', 'zones-fill'];
 function _firstVectorLayer() {
   for (const id of VECTOR_LAYER_IDS) {
     if (_map.getLayer(id)) return id;
