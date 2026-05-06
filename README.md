@@ -32,8 +32,8 @@ python3 -m http.server 8080
 └─────────────────────────────────────────────────────────────┘
 ```
 
-- **Carte d'analyse** (gauche) — navigation libre, couches IGN/Google, annotations, rectangle de capture
-- **Carte de suivi** (droite) — fond sombre, historique de couverture, zones à traiter/traitées
+- **Carte d'analyse** (gauche) — navigation libre, couches IGN/Google, annotations, rectangle de capture. Le champ de recherche est positionné en overlay **haut-gauche** de cette carte.
+- **Carte de suivi** (droite) — fond sombre Carto avec **labels villes/routes/rues** lisibles au-dessus des couches de suivi, historique de couverture, zones à traiter/traitées. Les contours des zones y tracées sont également visibles sur la carte d'analyse (rouge = à traiter, vert = traité).
 - **Séparateur** — draggable pour redimensionner les deux volets ; double-clic pour revenir au 50/50
 - La carte de suivi reste **centrée sur la carte d'analyse** en permanence
 
@@ -61,7 +61,7 @@ Le panneau **Couches** (barre du bas) permet de superposer plusieurs fonds de ca
 
 | Couche | Zoom utile | Note |
 |---|---|---|
-| Plan IGN | 6 – 18 | Activée par défaut |
+| Plan IGN | 6 – 18 | |
 | Ortho HR | 6 – 21 | Orthophotos standard |
 | Ortho 20cm | 16 – 21 | Haute résolution |
 | PCRS Image | 18 – 21 | Niveau rue / réseau |
@@ -72,7 +72,7 @@ Le panneau **Couches** (barre du bas) permet de superposer plusieurs fonds de ca
 
 | Couche | Description |
 |---|---|
-| Google Satellite | Imagerie satellitaire |
+| Google Satellite | Imagerie satellitaire (**activée par défaut**) |
 | Google Hybride | Satellite + noms de rues |
 | Google Maps | Carte routière |
 
@@ -82,8 +82,10 @@ Chaque couche dispose d'un **slider d'opacité** (0–100 %) et de boutons d'ord
 
 ## Recherche et navigation
 
-- **Adresse** — saisie libre avec autocomplétion ([api-adresse.data.gouv.fr](https://api-adresse.data.gouv.fr))
-- **Coordonnées** — saisir `lat, lon` ou `lat lon` en WGS84 décimal (ex : `48.8534, 2.3488`)
+Le champ de recherche se trouve en **overlay haut-gauche** de la carte d'analyse.
+
+- **Adresse** — saisie libre avec autocomplétion ([api-adresse.data.gouv.fr](https://api-adresse.data.gouv.fr)) ; les résultats s'ouvrent vers le bas, une erreur réseau est signalée
+- **Coordonnées** — saisir `lat, lon` ou `lat lon` en WGS84 décimal (ex : `48.8534, 2.3488`) ; les bornes ±90 / ±180 sont validées
 - La sélection centre la carte d'analyse au zoom 17
 
 ---
@@ -151,6 +153,8 @@ Cliquer sur une zone affiche sa popup : renommer, changer de statut, supprimer. 
 
 Cliquer sur une zone dans le panneau **≡ Zones** recentre la carte d'analyse sur cette zone.
 
+Les contours des zones sont **également affichés sur la carte d'analyse** (rouge = à traiter, vert = traité, avec halo blanc pour la lisibilité sur fond satellite), en dessous des markers d'annotations.
+
 ---
 
 ## Vue terrain
@@ -204,6 +208,15 @@ geoint-explorer/
 **Stack** : MapLibre GL JS 4.7 (CDN) · HTML/CSS/JS vanilla · ES Modules natifs · localStorage
 
 Aucune dépendance serveur. Compatible Chrome, Firefox, Edge modernes.
+
+**Fonds de carte utilisés**
+
+| Carte | Source |
+|---|---|
+| Analyse — fond de référence | OpenStreetMap (opacité 15 %) |
+| Analyse — couches sélectionnables | IGN Géoplateforme WMTS + Google XYZ |
+| Suivi — fond sombre | CARTO `dark_nolabels` |
+| Suivi — labels villes/routes/rues | CARTO `dark_only_labels` (layer au-dessus de tout) |
 
 ---
 

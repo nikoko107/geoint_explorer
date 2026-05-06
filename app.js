@@ -258,6 +258,19 @@ function tryInit() {
   // Séparateur et sync cartes
   initPaneDivider();
   initTrackingSync();
+
+  // Labels villes/routes/rues Carto ajoutés EN DERNIER sur la carte de suivi
+  // afin d'être au-dessus de tous les layers custom (navlog, zones).
+  mapTracking.addSource('carto-labels', {
+    type: 'raster',
+    tiles: [
+      'https://a.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png',
+      'https://b.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png',
+    ],
+    tileSize: 256,
+    attribution: '© CARTO © OpenStreetMap contributors',
+  });
+  mapTracking.addLayer({ id: 'carto-labels', type: 'raster', source: 'carto-labels' });
 }
 
 mapAnalysis.on('load', () => { analysisReady = true; tryInit(); });
