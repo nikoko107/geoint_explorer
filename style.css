@@ -683,10 +683,6 @@ body.annotation-mode #map-analysis .maplibregl-canvas {
 }
 
 /* Curseur dessin zone */
-body.draw-rect-mode #map-tracking,
-body.draw-rect-mode #map-tracking .maplibregl-canvas {
-  cursor: crosshair !important;
-}
 body.draw-poly-mode #map-tracking,
 body.draw-poly-mode #map-tracking .maplibregl-canvas {
   cursor: crosshair !important;
