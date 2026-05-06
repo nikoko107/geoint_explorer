@@ -5,7 +5,6 @@ const SOURCE_ID    = 'zones-source';
 const FILL_LAYER   = 'zones-fill';
 const LINE_LAYER   = 'zones-line';
 
-// Couche contours sur la carte d'analyse (lecture seule, tirets)
 const ANALYSIS_SOURCE = 'zones-analysis-source';
 const ANALYSIS_LINE   = 'zones-analysis-line';
 
