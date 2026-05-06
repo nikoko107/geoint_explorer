@@ -460,8 +460,8 @@ function _refreshZonesList() {
   if (!list) return;
   list.innerHTML = '';
 
+  const navLog = getNavLog();
   for (const zone of _zones) {
-    const navLog = getNavLog();
     const bbox   = _zoneBbox(zone);
     const { maxLevel } = _computeMaxCoverage(bbox, navLog);
     const lvlLabel    = maxLevel ? COVERAGE_LEVELS[maxLevel]?.label : '';
@@ -469,13 +469,17 @@ function _refreshZonesList() {
     const shapeIcon   = zone.shapeType === 'poly' ? '⬡' : '⬜';
 
     const li = document.createElement('li');
-    li.innerHTML = `
-      <span class="list-dot ${zone.status === 'done' ? 'dot-done' : 'dot-todo'}"></span>
-      <div>
-        <div class="list-item-main">${shapeIcon} ${zone.name}</div>
-        <div class="list-item-sub">${statusLabel}${lvlLabel ? ' · ' + lvlLabel : ''}</div>
-      </div>
-    `;
+    const dot = document.createElement('span');
+    dot.className = `list-dot ${zone.status === 'done' ? 'dot-done' : 'dot-todo'}`;
+    const div = document.createElement('div');
+    const main = document.createElement('div');
+    main.className = 'list-item-main';
+    main.textContent = `${shapeIcon} ${zone.name}`;
+    const sub = document.createElement('div');
+    sub.className = 'list-item-sub';
+    sub.textContent = `${statusLabel}${lvlLabel ? ' · ' + lvlLabel : ''}`;
+    div.append(main, sub);
+    li.append(dot, div);
     li.addEventListener('click', () => {
       const [w, s, e, n] = bbox;
       _mapAnalysis.fitBounds([[w, s], [e, n]], { padding: 40 });
@@ -504,10 +508,8 @@ function _bboxOverlaps(a, b) {
 
 let _tooltip = null;
 function _showTooltip(lngLat, text) {
-  if (!_tooltip) _tooltip = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
-  _tooltip.setLngLat(lngLat)
-    .setHTML(`<span style="font-size:11px;font-family:monospace">${text}</span>`)
-    .addTo(_map);
+  if (!_tooltip) _tooltip = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: 'tracking-tooltip' });
+  _tooltip.setLngLat(lngLat).setText(text).addTo(_map);
 }
 function _hideTooltip() { _tooltip?.remove(); }
 

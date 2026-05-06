@@ -52,17 +52,18 @@ export function getNavLog() {
 
 // ── Rectangle de capture ──────────────────────────────────────────
 
-function _positionCaptureRect() {
+function _captureRectLayout() {
   const container = _mapAnalysis.getContainer();
-  const rect = container.getBoundingClientRect();
-  const w = rect.width;
-  const h = rect.height;
-
+  const { width: w, height: h } = container.getBoundingClientRect();
   const capW = Math.round(w * 0.6);
   const capH = Math.round(h * 0.6);
   const left = Math.round((w - capW) / 2);
   const top  = Math.round((h - capH) / 2);
+  return { capW, capH, left, top };
+}
 
+function _positionCaptureRect() {
+  const { capW, capH, left, top } = _captureRectLayout();
   const el = document.getElementById('capture-rect');
   if (!el) return;
   el.style.left   = `${left}px`;
@@ -72,20 +73,9 @@ function _positionCaptureRect() {
 }
 
 function _getCaptureRectBbox() {
-  const container = _mapAnalysis.getContainer();
-  const rect = container.getBoundingClientRect();
-  const w = rect.width;
-  const h = rect.height;
-
-  const capW = Math.round(w * 0.6);
-  const capH = Math.round(h * 0.6);
-  const left = Math.round((w - capW) / 2);
-  const top  = Math.round((h - capH) / 2);
-
-  // Convertir pixels → coordonnées géographiques
+  const { capW, capH, left, top } = _captureRectLayout();
   const sw = _mapAnalysis.unproject([left, top + capH]);
   const ne = _mapAnalysis.unproject([left + capW, top]);
-
   return [sw.lng, sw.lat, ne.lng, ne.lat]; // [minLng, minLat, maxLng, maxLat]
 }
 
@@ -198,7 +188,7 @@ function _showTrackingTooltip(lngLat, text) {
   if (!_tooltip) {
     _tooltip = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: 'tracking-tooltip' });
   }
-  _tooltip.setLngLat(lngLat).setHTML(`<span style="font-size:11px;font-family:monospace">${text}</span>`).addTo(_mapTracking);
+  _tooltip.setLngLat(lngLat).setText(text).addTo(_mapTracking);
 }
 function _hideTrackingTooltip() {
   _tooltip?.remove();
@@ -291,13 +281,17 @@ function _updateNavLogPanel() {
     const lon = entry.center[0].toFixed(4);
 
     const li = document.createElement('li');
-    li.innerHTML = `
-      <span class="list-dot ${def?.dotClass || ''}"></span>
-      <div>
-        <div class="list-item-main monospace">[${time}] z${entry.zoom} ${def?.label || ''}</div>
-        <div class="list-item-sub monospace">${lat}, ${lon}</div>
-      </div>
-    `;
+    const dot = document.createElement('span');
+    dot.className = `list-dot ${def?.dotClass || ''}`;
+    const div = document.createElement('div');
+    const main = document.createElement('div');
+    main.className = 'list-item-main monospace';
+    main.textContent = `[${time}] z${entry.zoom} ${def?.label || ''}`;
+    const sub = document.createElement('div');
+    sub.className = 'list-item-sub monospace';
+    sub.textContent = `${lat}, ${lon}`;
+    div.append(main, sub);
+    li.append(dot, div);
     li.addEventListener('click', () => {
       _mapAnalysis.flyTo({ center: entry.center, zoom: entry.zoom });
     });

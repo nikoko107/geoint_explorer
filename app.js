@@ -273,17 +273,17 @@ function initTerrainButtons(map) {
 
   document.getElementById('btn-streetview')?.addEventListener('click', () => {
     const { lat, lon } = center();
-    window.open(`https://maps.google.com/?layer=c&cbll=${lat},${lon}`, '_blank');
+    window.open(`https://maps.google.com/?layer=c&cbll=${lat},${lon}`, '_blank', 'noopener,noreferrer');
   });
 
   document.getElementById('btn-mapillary')?.addEventListener('click', () => {
     const { lat, lon } = center();
-    window.open(`https://www.mapillary.com/app/?lat=${lat}&lng=${lon}&z=18`, '_blank');
+    window.open(`https://www.mapillary.com/app/?lat=${lat}&lng=${lon}&z=18`, '_blank', 'noopener,noreferrer');
   });
 
   document.getElementById('btn-panoramax')?.addEventListener('click', () => {
     const { lat, lon } = center();
-    window.open(`https://panoramax.ign.fr/?background=streets&focus=pic&map=17/${lat}/${lon}&speed=250&users=default`, '_blank');
+    window.open(`https://panoramax.ign.fr/?background=streets&focus=pic&map=17/${lat}/${lon}&speed=250&users=default`, '_blank', 'noopener,noreferrer');
   });
 }
 
@@ -308,9 +308,15 @@ function initGeocoder(map) {
     if (coordMatch) {
       const lat = parseFloat(coordMatch[1]);
       const lon = parseFloat(coordMatch[2]);
-      if (!isNaN(lat) && !isNaN(lon)) {
+      if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
         const li = document.createElement('li');
-        li.innerHTML = `<div class="result-main">📍 ${lat}, ${lon}</div><div class="result-sub">Coordonnées WGS84</div>`;
+        const mainDiv = document.createElement('div');
+        mainDiv.className = 'result-main';
+        mainDiv.textContent = `📍 ${lat}, ${lon}`;
+        const subDiv = document.createElement('div');
+        subDiv.className = 'result-sub';
+        subDiv.textContent = 'Coordonnées WGS84';
+        li.append(mainDiv, subDiv);
         li.addEventListener('click', () => {
           map.flyTo({ center: [lon, lat], zoom: 17 });
           results.innerHTML = '';
@@ -345,7 +351,10 @@ async function fetchAddress(q, map, input, results) {
   try {
     const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=5`;
     const res = await fetch(url);
-    if (!res.ok) return;
+    if (!res.ok) {
+      _showGeocoderError(results, 'Erreur lors de la recherche d\'adresse');
+      return;
+    }
     const data = await res.json();
 
     results.innerHTML = '';
@@ -355,7 +364,13 @@ async function fetchAddress(q, map, input, results) {
       const [lon, lat] = feature.geometry.coordinates;
 
       const li = document.createElement('li');
-      li.innerHTML = `<div class="result-main">${label}</div><div class="result-sub">${context}</div>`;
+      const mainDiv = document.createElement('div');
+      mainDiv.className = 'result-main';
+      mainDiv.textContent = label;
+      const subDiv = document.createElement('div');
+      subDiv.className = 'result-sub';
+      subDiv.textContent = context;
+      li.append(mainDiv, subDiv);
       li.addEventListener('click', () => {
         map.flyTo({ center: [lon, lat], zoom: 17 });
         results.innerHTML = '';
@@ -364,6 +379,14 @@ async function fetchAddress(q, map, input, results) {
       results.appendChild(li);
     }
   } catch {
-    // Réseau indisponible, on ignore silencieusement
+    _showGeocoderError(results, 'Erreur réseau — vérifiez votre connexion');
   }
+}
+
+function _showGeocoderError(results, message) {
+  results.innerHTML = '';
+  const li = document.createElement('li');
+  li.className = 'result-error';
+  li.textContent = message;
+  results.appendChild(li);
 }
