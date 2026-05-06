@@ -252,6 +252,13 @@ button:active { background: #1d2035; }
   color: #fff;
 }
 
+/* Bouton reset discret (danger doux) */
+.btn-danger-soft {
+  color: #f87171;
+  border-color: #3f1515;
+}
+.btn-danger-soft:hover { background: rgba(239,68,68,0.12); border-color: var(--danger); color: #fca5a5; }
+
 /* Boutons vue terrain */
 .btn-terrain {
   color: #7dd3fc;

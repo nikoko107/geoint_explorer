@@ -1,7 +1,7 @@
 import { initStorage }        from './modules/storage.js';
 import { initProjects, getActiveProject, saveActiveProject, getActiveId } from './modules/projects.js';
 import { initLayers, initLayersPanel, reloadLayers, getLayerConfig } from './modules/layers.js';
-import { initTracker, reloadNavLog }    from './modules/tracker.js';
+import { initTracker, reloadNavLog, resetNavLog } from './modules/tracker.js';
 import { initAnnotations, initAnnotationsPanel, initAnnotationsTracking, reloadAnnotations } from './modules/annotations.js';
 import { initTrackingZones, reloadZones }                from './modules/tracking-zones.js';
 import { initExport }          from './modules/export.js';
@@ -249,6 +249,12 @@ function tryInit() {
 
   // Export
   initExport();
+
+  // Réinitialisation historique de navigation
+  document.getElementById('btn-reset-navlog')?.addEventListener('click', () => {
+    if (!confirm('Vider tout l\'historique de navigation de ce projet ? Les annotations et zones manuelles sont conservées.')) return;
+    resetNavLog();
+  });
 
   // Géocodage
   initGeocoder(mapAnalysis);
