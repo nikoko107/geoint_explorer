@@ -292,7 +292,12 @@ function initTerrainButtons(map) {
 function initGeocoder(map) {
   const input = document.getElementById('geocoder-input');
   const results = document.getElementById('geocoder-results');
+  const overlay = document.getElementById('geocoder-overlay');
   if (!input || !results) return;
+
+  // Déplace l'overlay dans le container MapLibre pour partager son
+  // contexte de stacking et rester au-dessus du canvas WebGL.
+  if (overlay) map.getContainer().appendChild(overlay);
 
   let debounceTimer = null;
 
