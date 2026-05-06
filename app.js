@@ -250,22 +250,6 @@ function tryInit() {
   // Export
   initExport();
 
-  // Réinitialisation historique de navigation
-  const resetPopup = document.getElementById('reset-navlog-popup');
-  document.getElementById('btn-reset-navlog')?.addEventListener('click', () => {
-    resetPopup?.classList.remove('hidden');
-  });
-  document.getElementById('btn-close-reset-popup')?.addEventListener('click', () => {
-    resetPopup?.classList.add('hidden');
-  });
-  document.getElementById('btn-cancel-reset-navlog')?.addEventListener('click', () => {
-    resetPopup?.classList.add('hidden');
-  });
-  document.getElementById('btn-confirm-reset-navlog')?.addEventListener('click', () => {
-    resetPopup?.classList.add('hidden');
-    resetNavLog();
-  });
-
   // Géocodage
   initGeocoder(mapAnalysis);
 
@@ -292,6 +276,27 @@ function tryInit() {
 
 mapAnalysis.on('load', () => { analysisReady = true; tryInit(); });
 mapTracking.on('load', () => { trackingReady = true; tryInit(); });
+
+// ── Reset historique navigation ───────────────────────────────────
+// Câblé au niveau module (ES modules sont différés = DOM prêt)
+// indépendamment de tryInit() pour éviter tout problème d'ordre d'init.
+
+{
+  const popup = document.getElementById('reset-navlog-popup');
+  const open  = () => popup?.classList.remove('hidden');
+  const close = () => popup?.classList.add('hidden');
+
+  document.getElementById('btn-reset-navlog')?.addEventListener('click', open);
+  document.getElementById('btn-close-reset-popup')?.addEventListener('click', close);
+  document.getElementById('btn-cancel-reset-navlog')?.addEventListener('click', close);
+  document.getElementById('btn-confirm-reset-navlog')?.addEventListener('click', () => {
+    close();
+    resetNavLog();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') close();
+  });
+}
 
 // ── Vue terrain ───────────────────────────────────────────────────
 
