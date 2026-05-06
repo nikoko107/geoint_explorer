@@ -47,6 +47,12 @@ export function getNavLog() {
   return _navLog;
 }
 
+export function resetNavLog() {
+  _navLog = [];
+  saveActiveProject({ navLog: _navLog });
+  _renderNavLog();
+}
+
 // ── Rectangle de capture ──────────────────────────────────────────
 
 function _captureRectLayout() {
