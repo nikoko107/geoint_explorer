@@ -120,8 +120,10 @@ function _renderZones() {
   _map.getSource(SOURCE_ID).setData({ type: 'FeatureCollection', features });
 
   // Mettre à jour les contours sur la carte d'analyse
-  if (_mapAnalysis?.getSource(ANALYSIS_SOURCE)) {
-    _mapAnalysis.getSource(ANALYSIS_SOURCE).setData({ type: 'FeatureCollection', features });
+  if (_mapAnalysis) {
+    // Initialisation défensive : réessaie si la source a été perdue
+    if (!_mapAnalysis.getSource(ANALYSIS_SOURCE)) _initZoneAnalysisLayer();
+    _mapAnalysis.getSource(ANALYSIS_SOURCE)?.setData({ type: 'FeatureCollection', features });
   }
 }
 
@@ -133,17 +135,32 @@ function _initZoneAnalysisLayer() {
     data: { type: 'FeatureCollection', features: [] },
   });
 
+  // Insérer avant les annotations pour que les markers restent au-dessus
+  const before = _mapAnalysis.getLayer('annotations-layer') ? 'annotations-layer' : undefined;
+
+  // Halo blanc d'abord (couche du dessous)
+  _mapAnalysis.addLayer({
+    id: ANALYSIS_LINE + '-halo',
+    type: 'line',
+    source: ANALYSIS_SOURCE,
+    paint: {
+      'line-color': '#ffffff',
+      'line-width': 5,
+      'line-opacity': 0.3,
+    },
+  }, before);
+
+  // Contour coloré par statut par-dessus le halo
   _mapAnalysis.addLayer({
     id: ANALYSIS_LINE,
     type: 'line',
     source: ANALYSIS_SOURCE,
     paint: {
       'line-color': ['get', 'color'],
-      'line-width': 1.5,
-      'line-dasharray': [5, 3],
-      'line-opacity': 0.85,
+      'line-width': 2.5,
+      'line-opacity': 1,
     },
-  });
+  }, before);
 }
 
 // Retourne les coordonnées fermées du polygone (quel que soit le type)
