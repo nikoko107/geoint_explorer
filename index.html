@@ -36,6 +36,11 @@
       <div class="pane-label">ANALYSE</div>
       <div id="map-analysis"></div>
       <div id="capture-rect"></div>
+      <!-- Géocodeur overlay top-left -->
+      <div id="geocoder-overlay">
+        <input id="geocoder-input" type="text" placeholder="Adresse ou lat, lon…" autocomplete="off" spellcheck="false" />
+        <ul id="geocoder-results"></ul>
+      </div>
     </section>
 
     <div id="pane-divider"></div>
@@ -68,12 +73,6 @@
 
   <!-- Barre de contrôle -->
   <footer id="control-bar">
-
-    <!-- Géocodage -->
-    <div class="control-group geocoder-group">
-      <input id="geocoder-input" type="text" placeholder="Adresse ou lat, lon…" autocomplete="off" spellcheck="false" />
-      <ul id="geocoder-results"></ul>
-    </div>
 
     <!-- Couches -->
     <div class="control-group">

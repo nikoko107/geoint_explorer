@@ -292,36 +292,42 @@ button:active { background: #1d2035; }
   white-space: nowrap;
 }
 
-/* ── Géocodeur ────────────────────────────────────────────────── */
-.geocoder-group {
-  position: relative;
+/* ── Géocodeur overlay (top-left de la carte d'analyse) ───────── */
+#geocoder-overlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 20;
+  width: 240px;
 }
 
 #geocoder-input {
-  background: var(--bg-panel2);
+  width: 100%;
+  background: rgba(20, 23, 32, 0.92);
   border: 1px solid var(--border);
   border-radius: 4px;
   color: var(--text);
-  padding: 4px 9px;
+  padding: 6px 10px;
   font-size: 12px;
-  width: 220px;
   outline: none;
+  backdrop-filter: blur(4px);
 }
 #geocoder-input:focus { border-color: var(--accent); }
 #geocoder-input::placeholder { color: var(--text-dim); }
 
 #geocoder-results {
   position: absolute;
-  bottom: calc(100% + 4px);
+  top: calc(100% + 4px);
   left: 0;
-  width: 280px;
-  background: var(--bg-panel2);
+  width: 100%;
+  background: rgba(20, 23, 32, 0.96);
   border: 1px solid var(--border);
   border-radius: 4px;
   list-style: none;
   z-index: 200;
   max-height: 220px;
   overflow-y: auto;
+  backdrop-filter: blur(4px);
 }
 #geocoder-results:empty { display: none; }
 #geocoder-results li {
@@ -713,5 +719,5 @@ body.draw-poly-mode #map-tracking .maplibregl-canvas {
     padding-top: 4px;
     width: 100%;
   }
-  #geocoder-input { width: 100%; }
+  #geocoder-overlay { width: calc(100% - 20px); }
 }
