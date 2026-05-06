@@ -109,7 +109,6 @@ function _onMoveEnd() {
   _navLog.push(entry);
   saveActiveProject({ navLog: _navLog });
   _renderNavLog();
-  _updateNavLogPanel();
 }
 
 // ── Calcul chevauchement ──────────────────────────────────────────
@@ -251,50 +250,3 @@ function _computeMaxLevels(navLog) {
   return result;
 }
 
-// ── Panneau liste navLog ──────────────────────────────────────────
-
-export function initNavLogPanel(mapAnalysis) {
-  _mapAnalysis = _mapAnalysis || mapAnalysis;
-
-  const btn = document.getElementById('btn-navlog');
-  const panel = document.getElementById('navlog-panel');
-  const close = document.getElementById('btn-close-navlog');
-
-  btn?.addEventListener('click', () => {
-    panel?.classList.toggle('hidden');
-    _updateNavLogPanel();
-  });
-  close?.addEventListener('click', () => panel?.classList.add('hidden'));
-}
-
-function _updateNavLogPanel() {
-  const list = document.getElementById('navlog-list');
-  if (!list || document.getElementById('navlog-panel')?.classList.contains('hidden')) return;
-
-  const recent = _navLog.slice(-20).reverse();
-  list.innerHTML = '';
-
-  for (const entry of recent) {
-    const def = COVERAGE_LEVELS[entry.level];
-    const time = new Date(entry.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-    const lat = entry.center[1].toFixed(4);
-    const lon = entry.center[0].toFixed(4);
-
-    const li = document.createElement('li');
-    const dot = document.createElement('span');
-    dot.className = `list-dot ${def?.dotClass || ''}`;
-    const div = document.createElement('div');
-    const main = document.createElement('div');
-    main.className = 'list-item-main monospace';
-    main.textContent = `[${time}] z${entry.zoom} ${def?.label || ''}`;
-    const sub = document.createElement('div');
-    sub.className = 'list-item-sub monospace';
-    sub.textContent = `${lat}, ${lon}`;
-    div.append(main, sub);
-    li.append(dot, div);
-    li.addEventListener('click', () => {
-      _mapAnalysis.flyTo({ center: entry.center, zoom: entry.zoom });
-    });
-    list.appendChild(li);
-  }
-}
