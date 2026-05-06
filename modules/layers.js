@@ -117,7 +117,7 @@ function _normalizeConfig(config) {
   if (!config || config.length === 0) {
     return LAYER_DEFS.map(def => ({
       id: def.id,
-      enabled: def.id === 'plan',
+      enabled: def.id === 'google-sat',
       opacity: 100,
     }));
   }

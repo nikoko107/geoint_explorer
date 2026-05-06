@@ -5,6 +5,10 @@ const SOURCE_ID    = 'zones-source';
 const FILL_LAYER   = 'zones-fill';
 const LINE_LAYER   = 'zones-line';
 
+// Couche contours sur la carte d'analyse (lecture seule, tirets)
+const ANALYSIS_SOURCE = 'zones-analysis-source';
+const ANALYSIS_LINE   = 'zones-analysis-line';
+
 const PREVIEW_SOURCE = 'zone-preview-source';
 const PREVIEW_LINE   = 'zone-preview-line';
 const PREVIEW_FILL   = 'zone-preview-fill';
@@ -37,6 +41,7 @@ export function initTrackingZones(mapTracking, mapAnalysis, initialZones) {
   _zones       = initialZones || [];
 
   _initZoneSource();
+  _initZoneAnalysisLayer();
   _initPreviewSource();
   _renderZones();
   _wireUI();
@@ -113,6 +118,32 @@ function _renderZones() {
   });
 
   _map.getSource(SOURCE_ID).setData({ type: 'FeatureCollection', features });
+
+  // Mettre à jour les contours sur la carte d'analyse
+  if (_mapAnalysis?.getSource(ANALYSIS_SOURCE)) {
+    _mapAnalysis.getSource(ANALYSIS_SOURCE).setData({ type: 'FeatureCollection', features });
+  }
+}
+
+function _initZoneAnalysisLayer() {
+  if (!_mapAnalysis || _mapAnalysis.getSource(ANALYSIS_SOURCE)) return;
+
+  _mapAnalysis.addSource(ANALYSIS_SOURCE, {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] },
+  });
+
+  _mapAnalysis.addLayer({
+    id: ANALYSIS_LINE,
+    type: 'line',
+    source: ANALYSIS_SOURCE,
+    paint: {
+      'line-color': ['get', 'color'],
+      'line-width': 1.5,
+      'line-dasharray': [5, 3],
+      'line-opacity': 0.85,
+    },
+  });
 }
 
 // Retourne les coordonnées fermées du polygone (quel que soit le type)
