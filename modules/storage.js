@@ -99,15 +99,3 @@ function pruneNavLogs() {
   }
 }
 
-/**
- * Estime l'espace utilisé par le localStorage (en octets, approximatif).
- */
-export function storageUsedBytes() {
-  let total = 0;
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    const val = localStorage.getItem(key);
-    total += (key.length + val.length) * 2; // UTF-16
-  }
-  return total;
-}

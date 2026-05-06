@@ -5,7 +5,6 @@ const SOURCE_ID    = 'zones-source';
 const FILL_LAYER   = 'zones-fill';
 const LINE_LAYER   = 'zones-line';
 
-// Couche contours sur la carte d'analyse (lecture seule, tirets)
 const ANALYSIS_SOURCE = 'zones-analysis-source';
 const ANALYSIS_LINE   = 'zones-analysis-line';
 
@@ -168,12 +167,14 @@ function _zoneCoords(zone) {
     }
     return closed;
   }
+  if (!zone.bbox) return [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]];
   const [w, s, e, n] = zone.bbox;
   return [[w, s], [e, s], [e, n], [w, n], [w, s]];
 }
 
 function _zoneBbox(zone) {
   if (zone.bbox) return zone.bbox;
+  if (!zone.coordinates?.length) return [0, 0, 0, 0];
   const lngs = zone.coordinates.map(c => c[0]);
   const lats = zone.coordinates.map(c => c[1]);
   return [Math.min(...lngs), Math.min(...lats), Math.max(...lngs), Math.max(...lats)];
@@ -472,7 +473,7 @@ function _refreshZonesList() {
 function _computeMaxCoverage(bbox, navLog) {
   let maxRank = 0, maxLevel = null, maxZoom = null;
   for (const entry of navLog) {
-    if (!_bboxOverlaps(bbox, entry.bbox)) continue;
+    if (!entry.bbox || !_bboxOverlaps(bbox, entry.bbox)) continue;
     const rank = coverageLevelRank(entry.level);
     if (rank > maxRank) { maxRank = rank; maxLevel = entry.level; maxZoom = entry.zoom; }
   }

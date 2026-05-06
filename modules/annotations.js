@@ -90,7 +90,6 @@ function _initSource() {
     data: { type: 'FeatureCollection', features: [] },
   });
 
-  // Cercle coloré selon catégorie
   _map.addLayer({
     id: LAYER_ID,
     type: 'circle',
@@ -110,7 +109,7 @@ function _initSource() {
     const f = e.features?.[0];
     if (!f) return;
     e.stopPropagation?.();
-    _showViewPopup(f.properties.id, e.lngLat);
+    _showViewPopup(f.properties.id);
   });
 
   _map.on('mouseenter', LAYER_ID, () => {

@@ -34,10 +34,7 @@ export function initTracker(mapAnalysis, mapTracking, initialNavLog) {
   _initTrackingSource();
   _renderNavLog();
 
-  // Enregistrement sur moveend
   _mapAnalysis.on('moveend', _onMoveEnd);
-
-  // Repositionner le rectangle si la carte est redimensionnée
   _mapAnalysis.on('resize', _positionCaptureRect);
 }
 

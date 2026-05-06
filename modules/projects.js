@@ -29,7 +29,9 @@ export function saveActiveProject(data) {
   const activeId = storageGet('geoint_active');
   if (!activeId) return;
   const existing = storageGet(`geoint_project_${activeId}`) || {};
-  storageSet(`geoint_project_${activeId}`, { ...existing, ...data });
+  const updated = { ...existing, ...data };
+  storageSet(`geoint_project_${activeId}`, updated);
+  _updateStatus(updated);
 }
 
 export function getActiveId() {

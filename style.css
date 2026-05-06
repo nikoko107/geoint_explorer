@@ -167,7 +167,6 @@ body {
   pointer-events: none;
   border: 1px dashed rgba(148, 163, 184, 0.45);
   z-index: 5;
-  /* Dimensions calculées dynamiquement via JS */
 }
 
 /* ── Barre de contrôle ────────────────────────────────────────── */

@@ -173,12 +173,10 @@ function _buildUI() {
   container.innerHTML = '';
 
   let currentGroup = null;
-  for (let i = 0; i < _config.length; i++) {
-    const cfg = _config[i];
+  for (const cfg of _config) {
     const def = LAYER_DEFS.find(d => d.id === cfg.id);
     if (!def) continue;
 
-    // Séparateur de groupe
     if (def.group !== currentGroup) {
       currentGroup = def.group;
       const sep = document.createElement('div');
@@ -191,55 +189,94 @@ function _buildUI() {
     item.className = 'layer-item';
     item.dataset.id = def.id;
 
-    item.innerHTML = `
-      <div class="layer-item-header">
-        <input type="checkbox" id="lchk-${def.id}" ${cfg.enabled ? 'checked' : ''} />
-        <label for="lchk-${def.id}" class="layer-name">${def.label}</label>
-        <div class="layer-order-btns">
-          <button data-action="up"   data-id="${def.id}" title="Monter">▲</button>
-          <button data-action="down" data-id="${def.id}" title="Descendre">▼</button>
-        </div>
-      </div>
-      ${def.warnZoom ? `<div class="layer-warn" id="lwarn-${def.id}">Non disponible avant zoom ${def.warnZoom}</div>` : ''}
-      <div class="layer-opacity-row ${cfg.enabled ? 'enabled' : ''}">
-        <input type="range" id="lopa-${def.id}" min="0" max="100" value="${cfg.opacity}" />
-        <span class="layer-opacity-val" id="lopav-${def.id}">${cfg.opacity}%</span>
-      </div>
-    `;
+    // Header
+    const header = document.createElement('div');
+    header.className = 'layer-item-header';
+
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.id = `lchk-${def.id}`;
+    chk.checked = cfg.enabled;
+
+    const lbl = document.createElement('label');
+    lbl.htmlFor = `lchk-${def.id}`;
+    lbl.className = 'layer-name';
+    lbl.textContent = def.label;
+
+    const orderBtns = document.createElement('div');
+    orderBtns.className = 'layer-order-btns';
+
+    const btnUp   = document.createElement('button');
+    btnUp.title   = 'Monter';
+    btnUp.textContent = '▲';
+
+    const btnDown  = document.createElement('button');
+    btnDown.title  = 'Descendre';
+    btnDown.textContent = '▼';
+
+    orderBtns.append(btnUp, btnDown);
+    header.append(chk, lbl, orderBtns);
+    item.appendChild(header);
+
+    if (def.warnZoom) {
+      const warn = document.createElement('div');
+      warn.className = 'layer-warn';
+      warn.id = `lwarn-${def.id}`;
+      warn.textContent = `Non disponible avant zoom ${def.warnZoom}`;
+      item.appendChild(warn);
+    }
+
+    // Opacité
+    const opRow = document.createElement('div');
+    opRow.className = `layer-opacity-row${cfg.enabled ? ' enabled' : ''}`;
+
+    const slider = document.createElement('input');
+    slider.type  = 'range';
+    slider.id    = `lopa-${def.id}`;
+    slider.min   = '0';
+    slider.max   = '100';
+    slider.value = String(cfg.opacity);
+
+    const opVal = document.createElement('span');
+    opVal.className  = 'layer-opacity-val';
+    opVal.id         = `lopav-${def.id}`;
+    opVal.textContent = `${cfg.opacity}%`;
+
+    opRow.append(slider, opVal);
+    item.appendChild(opRow);
+
     container.appendChild(item);
 
-    item.querySelector(`#lchk-${def.id}`).addEventListener('change', e => {
+    // Événements — références directes aux éléments créés ci-dessus
+    chk.addEventListener('change', e => {
       _setCfg(def.id, 'enabled', e.target.checked);
       _applyToMap();
       _refreshOpacityRow(def.id);
       _save();
     });
 
-    item.querySelector(`#lopa-${def.id}`).addEventListener('input', e => {
+    slider.addEventListener('input', e => {
       const val = parseInt(e.target.value);
-      document.getElementById(`lopav-${def.id}`).textContent = `${val}%`;
+      opVal.textContent = `${val}%`;
       _setCfg(def.id, 'opacity', val);
       const lid = layerId(def);
-      if (_map.getLayer(lid)) {
-        _map.setPaintProperty(lid, 'raster-opacity', val / 100);
-      }
+      if (_map.getLayer(lid)) _map.setPaintProperty(lid, 'raster-opacity', val / 100);
       _save();
     });
 
-    item.querySelectorAll('[data-action]').forEach(btn => {
+    for (const btn of [btnUp, btnDown]) {
       btn.addEventListener('click', () => {
-        const action = btn.dataset.action;
         const idx = _config.findIndex(c => c.id === def.id);
-        if (action === 'up' && idx > 0) {
+        if (btn === btnUp && idx > 0) {
           [_config[idx - 1], _config[idx]] = [_config[idx], _config[idx - 1]];
-        } else if (action === 'down' && idx < _config.length - 1) {
+        } else if (btn === btnDown && idx < _config.length - 1) {
           [_config[idx], _config[idx + 1]] = [_config[idx + 1], _config[idx]];
         }
         _applyToMap();
         _buildUI();
         _save();
       });
-    });
+    }
   }
 
   _updateZoomWarnings();
