@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GeoINT Explorer</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Bandeau quota -->
+  <div id="quota-banner" class="quota-banner hidden">
+    <span id="quota-message">Espace de stockage presque plein — anciennes entrées de navigation supprimées automatiquement</span>
+    <button id="quota-close">✕</button>
+  </div>
+
+  <!-- Barre projet -->
+  <header id="project-bar">
+    <div class="project-bar-left">
+      <span class="bar-label">PROJET</span>
+      <select id="project-select"></select>
+      <button id="btn-new-project" title="Nouveau projet">+ Nouveau</button>
+      <button id="btn-delete-project" class="btn-danger" title="Supprimer le projet">🗑</button>
+    </div>
+    <div class="project-bar-right">
+      <span id="project-status" class="project-status"></span>
+    </div>
+  </header>
+
+  <!-- Zone principale : deux cartes -->
+  <main id="maps-container">
+
+    <!-- Carte d'analyse (gauche) -->
+    <section id="analysis-pane" class="map-pane">
+      <div class="pane-label">ANALYSE</div>
+      <div id="map-analysis"></div>
+      <div id="capture-rect"></div>
+    </section>
+
+    <div id="pane-divider"></div>
+
+    <!-- Carte de suivi (droite) -->
+    <section id="tracking-pane" class="map-pane">
+      <div class="pane-label">SUIVI</div>
+      <div id="map-tracking"></div>
+
+      <!-- Panneau liste navLog -->
+      <aside id="navlog-panel" class="side-panel">
+        <div class="side-panel-header">
+          <span>Historique</span>
+          <button id="btn-close-navlog" class="btn-icon">✕</button>
+        </div>
+        <ul id="navlog-list"></ul>
+      </aside>
+
+      <!-- Panneau liste zones -->
+      <aside id="zones-panel" class="side-panel">
+        <div class="side-panel-header">
+          <span>Zones de suivi</span>
+          <button id="btn-close-zones" class="btn-icon">✕</button>
+        </div>
+        <ul id="zones-list"></ul>
+      </aside>
+    </section>
+
+  </main>
+
+  <!-- Barre de contrôle -->
+  <footer id="control-bar">
+
+    <!-- Géocodage -->
+    <div class="control-group geocoder-group">
+      <input id="geocoder-input" type="text" placeholder="Adresse ou lat, lon…" autocomplete="off" spellcheck="false" />
+      <ul id="geocoder-results"></ul>
+    </div>
+
+    <!-- Couches -->
+    <div class="control-group">
+      <button id="btn-layers" class="btn-control" title="Couches IGN">
+        Couches
+      </button>
+      <!-- Panneau couches (dropdown) -->
+      <div id="layers-panel" class="dropdown-panel hidden">
+        <div class="layers-panel-header">Couches IGN</div>
+        <div id="layers-list"></div>
+      </div>
+    </div>
+
+    <!-- Annotations -->
+    <div class="control-group">
+      <button id="btn-annotate" class="btn-control" title="Mode annotation">📌 Annoter</button>
+      <button id="btn-annotations-list" class="btn-control" title="Liste des annotations">≡ Annotations</button>
+    </div>
+
+    <!-- Zones de suivi -->
+    <div class="control-group">
+      <button id="btn-draw-rect" class="btn-control" title="Dessiner un rectangle (cliquer-glisser)">⬜ Rectangle</button>
+      <button id="btn-draw-poly" class="btn-control" title="Dessiner un polygone libre (clics)">⬡ Polygone</button>
+      <button id="btn-zones-list" class="btn-control" title="Liste des zones">≡ Zones</button>
+    </div>
+
+    <!-- Historique navigation -->
+    <div class="control-group">
+      <button id="btn-navlog" class="btn-control" title="Historique de navigation">🗺 Historique</button>
+    </div>
+
+    <!-- Vue terrain -->
+    <div class="control-group">
+      <button id="btn-streetview"  class="btn-control btn-terrain" title="Ouvrir dans Google Street View">🚶 Street View</button>
+      <button id="btn-mapillary"   class="btn-control btn-terrain" title="Ouvrir dans Mapillary">📷 Mapillary</button>
+      <button id="btn-panoramax"   class="btn-control btn-terrain" title="Ouvrir dans Panoramax">🌐 Panoramax</button>
+    </div>
+
+    <!-- Export -->
+    <div class="control-group">
+      <button id="btn-export-geojson" class="btn-control" title="Exporter en GeoJSON">↓ GeoJSON</button>
+      <button id="btn-export-csv" class="btn-control" title="Exporter en CSV">↓ CSV</button>
+    </div>
+
+    <!-- Coordonnées curseur -->
+    <div class="control-group coords-group">
+      <span id="cursor-coords" class="monospace">—</span>
+    </div>
+
+  </footer>
+
+  <!-- Popup annotation (création / édition) -->
+  <div id="annotation-popup" class="floating-popup hidden">
+    <div class="popup-header">
+      <span id="annotation-popup-title">Nouvelle annotation</span>
+      <button id="btn-close-annotation-popup" class="btn-icon">✕</button>
+    </div>
+    <div class="popup-body">
+      <label>Label
+        <input id="annotation-label" type="text" placeholder="Description…" />
+      </label>
+      <label>Catégorie
+        <input id="annotation-category" type="text" list="category-datalist" placeholder="Info, Alerte…" />
+        <datalist id="category-datalist">
+          <option value="Info"></option>
+          <option value="Alerte"></option>
+          <option value="Traité"></option>
+          <option value="À vérifier"></option>
+        </datalist>
+      </label>
+    </div>
+    <div class="popup-footer">
+      <button id="btn-save-annotation" class="btn-primary">Enregistrer</button>
+      <button id="btn-cancel-annotation" class="btn-secondary">Annuler</button>
+    </div>
+  </div>
+
+  <!-- Popup visualisation annotation -->
+  <div id="annotation-view-popup" class="floating-popup hidden">
+    <div class="popup-header">
+      <span id="view-popup-title">Annotation</span>
+      <button id="btn-close-view-popup" class="btn-icon">✕</button>
+    </div>
+    <div class="popup-body">
+      <p id="view-popup-label" class="popup-field"></p>
+      <p id="view-popup-category" class="popup-field popup-meta"></p>
+      <p id="view-popup-date" class="popup-field popup-meta monospace"></p>
+    </div>
+    <div class="popup-footer">
+      <button id="btn-edit-annotation" class="btn-secondary">Modifier</button>
+      <button id="btn-delete-annotation" class="btn-danger">Supprimer</button>
+    </div>
+  </div>
+
+  <!-- Panneau liste annotations -->
+  <aside id="annotations-panel" class="side-panel side-panel-analysis hidden">
+    <div class="side-panel-header">
+      <span>Annotations</span>
+      <button id="btn-close-annotations-panel" class="btn-icon">✕</button>
+    </div>
+    <div class="side-panel-filters">
+      <input id="annotation-search" type="text" placeholder="Rechercher…" />
+      <select id="annotation-filter-category">
+        <option value="">Toutes catégories</option>
+        <option value="Info">Info</option>
+        <option value="Alerte">Alerte</option>
+        <option value="Traité">Traité</option>
+        <option value="À vérifier">À vérifier</option>
+      </select>
+    </div>
+    <ul id="annotations-list"></ul>
+  </aside>
+
+  <!-- Popup zone de suivi -->
+  <div id="zone-popup" class="floating-popup hidden">
+    <div class="popup-header">
+      <span id="zone-popup-title">Nouvelle zone</span>
+      <button id="btn-close-zone-popup" class="btn-icon">✕</button>
+    </div>
+    <div class="popup-body">
+      <label>Nom
+        <input id="zone-name" type="text" placeholder="Nom de la zone…" />
+      </label>
+      <label>Statut
+        <select id="zone-status">
+          <option value="todo">À traiter</option>
+          <option value="done">Traité</option>
+        </select>
+      </label>
+      <p id="zone-coverage-info" class="popup-meta hidden"></p>
+    </div>
+    <div class="popup-footer">
+      <button id="btn-save-zone" class="btn-primary">Enregistrer</button>
+      <button id="btn-toggle-zone-status" class="btn-secondary hidden">Passer à Traité</button>
+      <button id="btn-delete-zone" class="btn-danger hidden">Supprimer</button>
+      <button id="btn-cancel-zone" class="btn-secondary">Annuler</button>
+    </div>
+  </div>
+
+  <!-- Barre flottante dessin polygone -->
+  <div id="poly-draw-bar" class="poly-draw-bar hidden">
+    <span id="poly-draw-hint" class="poly-draw-hint">Cliquez pour ajouter des points</span>
+    <button id="btn-poly-finish" class="btn-primary">✓ Terminer</button>
+    <button id="btn-poly-undo"   class="btn-secondary">↩ Annuler dernier</button>
+    <button id="btn-poly-cancel" class="btn-danger">✕ Annuler</button>
+  </div>
+
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
