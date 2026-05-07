@@ -17,9 +17,9 @@ python3 -m http.server 8080
 
 ## Interface
 
-```
+<img width="1434" height="749" alt="Capture d’écran 2026-05-07 à 18 03 08" src="https://github.com/user-attachments/assets/ffbd23cd-022e-4ee3-b1eb-6f13fdcf50aa" />
 
-<img width="2868" height="1498" alt="image" src="https://github.com/user-attachments/assets/057ba97b-deff-4e49-b748-5afbd09f8e9a" />
+```
 
 
 
