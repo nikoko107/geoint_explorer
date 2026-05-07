@@ -323,7 +323,13 @@ export function initLayersPanel() {
 
   btn.addEventListener('click', e => {
     e.stopPropagation();
-    panel.classList.toggle('hidden');
+    const hidden = panel.classList.toggle('hidden');
+    if (!hidden) {
+      // Positionner en fixed au-dessus du bouton, hors du contexte overflow
+      const r = btn.getBoundingClientRect();
+      panel.style.left   = `${r.left}px`;
+      panel.style.bottom = `${window.innerHeight - r.top + 6}px`;
+    }
   });
 
   document.addEventListener('click', e => {
