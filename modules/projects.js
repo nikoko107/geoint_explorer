@@ -128,3 +128,21 @@ function _nextProjectNumber() {
   const index = storageGet(INDEX_KEY) || [];
   return index.length + 1;
 }
+
+export function createAndSwitchProject(data) {
+  const project = {
+    id:            `p_${Date.now()}`,
+    name:          data.name,
+    createdAt:     data.createdAt     || new Date().toISOString(),
+    lastView:      data.lastView      || { center: [2.3488, 48.8534], zoom: 12 },
+    layerConfig:   data.layerConfig   || [],
+    annotations:   data.annotations   || [],
+    navLog:        data.navLog        || [],
+    trackingZones: data.trackingZones || [],
+  };
+  const index = storageGet(INDEX_KEY) || [];
+  index.push(project.id);
+  storageSet(INDEX_KEY, index);
+  storageSet(`geoint_project_${project.id}`, project);
+  _switchTo(project.id);
+}

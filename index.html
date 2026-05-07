@@ -99,8 +99,11 @@
 
     <!-- Export -->
     <div class="control-group">
-      <button id="btn-export-geojson" class="btn-control" title="Exporter en GeoJSON">↓ GeoJSON</button>
-      <button id="btn-export-csv" class="btn-control" title="Exporter en CSV">↓ CSV</button>
+      <button id="btn-export-geojson" class="btn-control" title="Exporter les annotations en GeoJSON">↓ GeoJSON</button>
+      <button id="btn-export-csv"     class="btn-control" title="Exporter les annotations en CSV">↓ CSV</button>
+      <button id="btn-export-project" class="btn-control" title="Exporter le projet complet (annotations, zones, historique) en JSON">↓ Projet</button>
+      <button id="btn-import-project" class="btn-control" title="Importer un projet depuis un fichier JSON (crée un nouveau projet)">↑ Projet</button>
+      <input  id="project-import-input" type="file" accept=".json" style="display:none" />
     </div>
 
     <!-- Coordonnées curseur -->

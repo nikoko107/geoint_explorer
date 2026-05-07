@@ -5,6 +5,8 @@ export function initExport() {
   document.getElementById('btn-export-csv')?.addEventListener('click', exportCSV);
 }
 
+// ── Export annotations ────────────────────────────────────────────
+
 function exportGeoJSON() {
   const project = getActiveProject();
   if (!project) return;
@@ -51,6 +53,49 @@ function exportCSV() {
     'text/csv;charset=utf-8'
   );
 }
+
+// ── Export / Import projet complet ────────────────────────────────
+
+export function exportProject() {
+  const project = getActiveProject();
+  if (!project) return;
+
+  const payload = {
+    geoint_export_version: 1,
+    name:          project.name,
+    createdAt:     project.createdAt,
+    lastView:      project.lastView      || null,
+    layerConfig:   project.layerConfig   || [],
+    annotations:   project.annotations   || [],
+    navLog:        project.navLog        || [],
+    trackingZones: project.trackingZones || [],
+  };
+
+  _download(
+    JSON.stringify(payload, null, 2),
+    `projet_${_safeName(project.name)}_${_dateStamp()}.json`,
+    'application/json'
+  );
+}
+
+export function parseProjectImport(text) {
+  const data = JSON.parse(text);
+  if (!data || typeof data !== 'object')          throw new Error('Fichier JSON invalide');
+  if (!data.geoint_export_version)                throw new Error('Ce fichier n\'est pas un export GeoINT Explorer');
+  if (!data.name || typeof data.name !== 'string') throw new Error('Nom de projet manquant');
+
+  return {
+    name:          data.name,
+    createdAt:     typeof data.createdAt === 'string' ? data.createdAt : new Date().toISOString(),
+    lastView:      data.lastView || null,
+    layerConfig:   Array.isArray(data.layerConfig)   ? data.layerConfig   : [],
+    annotations:   Array.isArray(data.annotations)   ? data.annotations   : [],
+    navLog:        Array.isArray(data.navLog)         ? data.navLog        : [],
+    trackingZones: Array.isArray(data.trackingZones) ? data.trackingZones : [],
+  };
+}
+
+// ── Utilitaires ───────────────────────────────────────────────────
 
 function _download(content, filename, mimeType) {
   const blob = new Blob([content], { type: mimeType });

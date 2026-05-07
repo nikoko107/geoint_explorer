@@ -27,8 +27,9 @@ python3 -m http.server 8080
 │                          │                                  │
 │  ← séparateur draggable →│                                  │
 ├──────────────────────────┴──────────────────────────────────┤
-│ [Couches] [📌 Annoter] [≡ Annotations] [✏ Zone] [≡ Zones]  │
-│ [🚶 Street View] [📷 Mapillary] [🌐 Panoramax] [↓ Export]  │
+│ [Couches] [📌 Annoter] [≡ Annotations] [✏ Zone] [≡ Zones] [↺ Reset] │
+│ [🚶 Street View] [📷 Mapillary] [🌐 Panoramax]              │
+│ [↓ GeoJSON] [↓ CSV] [↓ Projet] [↑ Projet]                  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -48,6 +49,8 @@ Un projet isole l'ensemble des données d'une mission : annotations, historique 
 | Créer | Bouton **+ Nouveau** dans la barre de projet |
 | Changer | Dropdown de sélection |
 | Supprimer | Bouton 🗑 (confirmation requise) |
+| Exporter | Bouton **↓ Projet** — sauvegarde complète en JSON |
+| Importer | Bouton **↑ Projet** — crée un nouveau projet depuis un fichier JSON |
 
 Les données sont persistées dans le `localStorage` du navigateur sous les clés `geoint_project_{id}` et `geoint_index`.
 
@@ -122,6 +125,8 @@ L'enregistrement se déclenche automatiquement sur chaque déplacement **si** :
 
 Les rectangles s'affichent sur la carte de suivi. Si une zone est repassée à un zoom plus faible, la couleur du **niveau le plus élevé** historique est conservée.
 
+Le bouton **↺ Reset** (groupe Zones) vide l'intégralité de l'historique de navigation du projet actif après confirmation. Les annotations et zones manuelles sont conservées.
+
 ---
 
 ## Zones de suivi
@@ -167,13 +172,23 @@ Ouvre la position courante de la carte d'analyse dans un service de photographie
 
 ---
 
-## Export
+## Export / Import
 
-Le bouton **↓ GeoJSON** et **↓ CSV** exportent les annotations du projet actif.
+### Annotations uniquement
 
-**GeoJSON** — `FeatureCollection` de Points, propriétés : `label`, `category`, `createdAt`
+| Bouton | Format | Contenu |
+|---|---|---|
+| **↓ GeoJSON** | `.geojson` | `FeatureCollection` de Points — `label`, `category`, `createdAt` |
+| **↓ CSV** | `.csv` | colonnes `id`, `lat`, `lon`, `label`, `category`, `createdAt` |
 
-**CSV** — colonnes : `id`, `lat`, `lon`, `label`, `category`, `createdAt`
+### Projet complet
+
+| Bouton | Action |
+|---|---|
+| **↓ Projet** | Exporte le projet actif en JSON : annotations, zones manuelles, historique de navigation, configuration des couches, dernière vue |
+| **↑ Projet** | Importe un fichier `.json` produit par **↓ Projet** — crée un **nouveau projet** (le projet actif n'est pas écrasé) et bascule automatiquement vers lui |
+
+Le fichier d'export contient un champ `geoint_export_version` qui permet de valider le format à l'import. En cas de fichier invalide, un message d'erreur s'affiche dans le bandeau en haut de l'interface.
 
 ---
 
@@ -200,7 +215,7 @@ geoint-explorer/
     ├── tracker.js           — navLog automatique, niveaux de couverture
     ├── annotations.js       — marqueurs, popups, liste, filtre
     ├── tracking-zones.js    — dessin polygone, statuts zones
-    └── export.js            — GeoJSON + CSV
+    └── export.js            — GeoJSON, CSV, export/import projet JSON
 ```
 
 **Stack** : MapLibre GL JS 4.7 (CDN) · HTML/CSS/JS vanilla · ES Modules natifs · localStorage

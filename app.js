@@ -1,10 +1,10 @@
 import { initStorage }        from './modules/storage.js';
-import { initProjects, getActiveProject, saveActiveProject, getActiveId } from './modules/projects.js';
+import { initProjects, getActiveProject, saveActiveProject, getActiveId, createAndSwitchProject } from './modules/projects.js';
 import { initLayers, initLayersPanel, reloadLayers, getLayerConfig } from './modules/layers.js';
 import { initTracker, reloadNavLog, resetNavLog } from './modules/tracker.js';
 import { initAnnotations, initAnnotationsPanel, initAnnotationsTracking, reloadAnnotations } from './modules/annotations.js';
 import { initTrackingZones, reloadZones }                from './modules/tracking-zones.js';
-import { initExport }          from './modules/export.js';
+import { initExport, exportProject, parseProjectImport } from './modules/export.js';
 
 // ── Cartes ────────────────────────────────────────────────────────
 
@@ -295,6 +295,36 @@ mapTracking.on('load', () => { trackingReady = true; tryInit(); });
   });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') close();
+  });
+}
+
+// ── Export / Import projet ────────────────────────────────────────
+
+document.getElementById('btn-export-project')?.addEventListener('click', exportProject);
+
+{
+  const importInput = document.getElementById('project-import-input');
+  document.getElementById('btn-import-project')?.addEventListener('click', () => importInput?.click());
+
+  importInput?.addEventListener('change', e => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = evt => {
+      try {
+        const data = parseProjectImport(evt.target.result);
+        createAndSwitchProject(data);
+      } catch (err) {
+        const banner = document.getElementById('quota-banner');
+        const msg    = document.getElementById('quota-message');
+        if (banner && msg) {
+          msg.textContent = `Erreur d'importation : ${err.message}`;
+          banner.classList.remove('hidden');
+        }
+      }
+      importInput.value = '';
+    };
+    reader.readAsText(file);
   });
 }
 
