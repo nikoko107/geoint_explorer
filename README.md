@@ -18,6 +18,11 @@ python3 -m http.server 8080
 ## Interface
 
 ```
+
+<img width="2868" height="1498" alt="image" src="https://github.com/user-attachments/assets/057ba97b-deff-4e49-b748-5afbd09f8e9a" />
+
+
+
 ┌─────────────────────────────────────────────────────────────┐
 │  PROJET : [Projet actif ▼]  [+ Nouveau]  [🗑]               │
 ├──────────────────────────┬──────────────────────────────────┤
