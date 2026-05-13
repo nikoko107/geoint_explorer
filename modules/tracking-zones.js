@@ -86,6 +86,7 @@ function _initZoneSource() {
   });
   _map.on('click', FILL_LAYER, e => {
     if (_drawMode) return;
+    if (document.body.classList.contains('sv-mode')) return;
     if (!e.features?.length) return;
     e.stopPropagation?.();
     _showZonePopup(e.features[0].properties.id);

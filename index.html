@@ -37,6 +37,21 @@
       <div id="map-analysis"></div>
       <div id="capture-rect"></div>
       <!-- Géocodeur overlay top-left -->
+      <!-- Overlay Vue immersive Street View -->
+      <div id="sv-overlay" class="hidden">
+        <iframe id="sv-iframe" src="about:blank" title="Google Street View" allowfullscreen></iframe>
+        <div id="sv-controls">
+          <span id="sv-coords" class="sv-coords-text"></span>
+          <label class="sv-heading-label">
+            <span>↗</span>
+            <input type="range" id="sv-heading" min="0" max="359" value="0" />
+            <span id="sv-heading-val">0°</span>
+          </label>
+          <span class="sv-hint">Clic sur la carte de suivi pour naviguer</span>
+          <button id="btn-sv-close" class="btn-control">✕ Fermer</button>
+        </div>
+      </div>
+
       <div id="geocoder-overlay">
         <input id="geocoder-input" type="text" placeholder="Adresse ou lat, lon…" autocomplete="off" spellcheck="false" />
         <ul id="geocoder-results"></ul>
@@ -95,6 +110,8 @@
       <button id="btn-streetview"  class="btn-control btn-terrain" title="Ouvrir dans Google Street View">🚶 Street View</button>
       <button id="btn-mapillary"   class="btn-control btn-terrain" title="Ouvrir dans Mapillary">📷 Mapillary</button>
       <button id="btn-panoramax"   class="btn-control btn-terrain" title="Ouvrir dans Panoramax">🌐 Panoramax</button>
+      <button id="btn-sv-embed"    class="btn-control btn-terrain" title="Vue immersive Street View intégrée (sans quitter l'app)">🔭 Vue immersive</button>
+      <button id="btn-sv-coverage" class="btn-control btn-terrain" title="Afficher/masquer la couverture Street View sur la carte de suivi">🔵 Coverage GSV</button>
     </div>
 
     <!-- Export -->

@@ -177,6 +177,7 @@ function _initTrackingSource() {
 
   // Clic : centrer carte d'analyse
   _mapTracking.on('click', LAYER_ID + '-fill', e => {
+    if (document.body.classList.contains('sv-mode')) return;
     if (!e.features?.length) return;
     const bbox = JSON.parse(e.features[0].properties.bboxJson);
     const lng = (bbox[0] + bbox[2]) / 2;
