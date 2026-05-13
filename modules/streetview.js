@@ -1,8 +1,4 @@
-// modules/streetview.js — Vue immersive Google Street View intégrée
-
-const GSV_COVERAGE_TILES = [
-  'https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m4!1e3!2ssvv!4m2!1scc!2s*211m3*211e2*212b1*213b1*214b1',
-];
+// modules/streetview.js — Vue immersive Panoramax intégrée (navigation 360° + suivi carte de suivi)
 
 let _mapAnalysis = null;
 let _mapTracking = null;
@@ -12,6 +8,7 @@ let _heading = 0;
 let _marker = null;
 let _trackingClickHandler = null;
 let _coverageVisible = false;
+let _coverageTimer = null;
 
 export function initStreetView(mapAnalysis, mapTracking) {
   _mapAnalysis = mapAnalysis;
@@ -44,8 +41,10 @@ function _openSV(lat, lng) {
 
   document.getElementById('sv-overlay')?.classList.remove('hidden');
   document.getElementById('btn-sv-embed')?.classList.add('active');
-  document.getElementById('sv-heading').value = '0';
-  document.getElementById('sv-heading-val').textContent = '0°';
+  const slider = document.getElementById('sv-heading');
+  if (slider) slider.value = '0';
+  const val = document.getElementById('sv-heading-val');
+  if (val) val.textContent = '0°';
   document.body.classList.add('sv-mode');
 
   _updateCoordsDisplay();
@@ -86,13 +85,14 @@ function _navigateTo(lat, lng) {
   }
 }
 
+// Utilise Panoramax IGN : viewer photo plein écran, navigation 360° et flèches de déplacement natifs.
+// Google Maps embed (output=embed) charge l'interface cartographique complète qui masque la panorama.
 function _loadIframe() {
   const lat = _position.lat.toFixed(6);
   const lng = _position.lng.toFixed(6);
-  const hdg = Math.round(_heading);
   const iframe = document.getElementById('sv-iframe');
   if (iframe) {
-    iframe.src = `https://www.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,${hdg},0,0,0&output=embed&z=17`;
+    iframe.src = `https://panoramax.ign.fr/?background=streets&focus=pic&map=17/${lat}/${lng}&speed=250&users=default`;
   }
 }
 
@@ -170,30 +170,58 @@ function _detachTrackingClick() {
   }
 }
 
+// Couche de disponibilité : séquences Panoramax IGN via API STAC (CORS ouvert, même routes que Google Street View en France).
+// Les tuiles Google Maps nécessitent des headers CORS que maps.googleapis.com ne fournit pas aux domaines tiers,
+// ce qui empêche leur chargement via fetch() utilisé par MapLibre 4.x.
 function _toggleCoverage() {
   _coverageVisible = !_coverageVisible;
   document.getElementById('btn-sv-coverage')?.classList.toggle('active', _coverageVisible);
 
   if (_coverageVisible) {
-    if (!_mapTracking.getSource('gsv-coverage')) {
-      _mapTracking.addSource('gsv-coverage', {
-        type: 'raster',
-        tiles: GSV_COVERAGE_TILES,
-        tileSize: 256,
-        attribution: '© Google',
+    if (!_mapTracking.getSource('panoramax-coverage')) {
+      _mapTracking.addSource('panoramax-coverage', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
       });
     }
-    if (!_mapTracking.getLayer('gsv-coverage-layer')) {
-      const beforeLayer = _mapTracking.getLayer('carto-labels') ? 'carto-labels' : undefined;
+    if (!_mapTracking.getLayer('panoramax-coverage-dots')) {
+      const before = _mapTracking.getLayer('carto-labels') ? 'carto-labels' : undefined;
       _mapTracking.addLayer({
-        id: 'gsv-coverage-layer',
-        type: 'raster',
-        source: 'gsv-coverage',
-        paint: { 'raster-opacity': 0.85 },
-      }, beforeLayer);
+        id: 'panoramax-coverage-dots',
+        type: 'circle',
+        source: 'panoramax-coverage',
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 2, 16, 5],
+          'circle-color': '#4299e1',
+          'circle-opacity': 0.75,
+          'circle-stroke-width': 0,
+        },
+      }, before);
     }
+    _fetchCoverageData();
+    _mapTracking.on('moveend', _onCoverageMoveEnd);
   } else {
-    if (_mapTracking.getLayer('gsv-coverage-layer')) _mapTracking.removeLayer('gsv-coverage-layer');
-    if (_mapTracking.getSource('gsv-coverage')) _mapTracking.removeSource('gsv-coverage');
+    _mapTracking.off('moveend', _onCoverageMoveEnd);
+    clearTimeout(_coverageTimer);
+    if (_mapTracking.getLayer('panoramax-coverage-dots')) _mapTracking.removeLayer('panoramax-coverage-dots');
+    if (_mapTracking.getSource('panoramax-coverage')) _mapTracking.removeSource('panoramax-coverage');
   }
+}
+
+function _onCoverageMoveEnd() {
+  clearTimeout(_coverageTimer);
+  _coverageTimer = setTimeout(_fetchCoverageData, 400);
+}
+
+async function _fetchCoverageData() {
+  if (!_coverageVisible) return;
+  const b = _mapTracking.getBounds();
+  const bbox = `${b.getWest().toFixed(5)},${b.getSouth().toFixed(5)},${b.getEast().toFixed(5)},${b.getNorth().toFixed(5)}`;
+  try {
+    const res = await fetch(`https://panoramax.ign.fr/api/search?bbox=${bbox}&limit=500`, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return;
+    const data = await res.json();
+    const src = _mapTracking.getSource('panoramax-coverage');
+    if (src) src.setData(data);
+  } catch { /* dégradation silencieuse */ }
 }
