@@ -5,6 +5,7 @@ import { initTracker, reloadNavLog, resetNavLog } from './modules/tracker.js';
 import { initAnnotations, initAnnotationsPanel, initAnnotationsTracking, reloadAnnotations } from './modules/annotations.js';
 import { initTrackingZones, reloadZones }                from './modules/tracking-zones.js';
 import { initExport, exportProject, parseProjectImport } from './modules/export.js';
+import { initPhotoLog, addPhotoEntry, reloadPhotoLog } from './modules/photo-log.js';
 
 // ── Cartes ────────────────────────────────────────────────────────
 
@@ -179,6 +180,9 @@ function onProjectSwitch(project) {
 
   // Recharger zones
   reloadZones(project.trackingZones || []);
+
+  // Recharger journal des visites terrain
+  reloadPhotoLog(project.photoLog || []);
 }
 
 // Mémoriser la vue courante avant switch
@@ -255,6 +259,9 @@ function tryInit() {
 
   // Vue terrain
   initTerrainButtons(mapAnalysis);
+
+  // Journal des visites terrain (marqueurs sur carte de suivi)
+  initPhotoLog(mapAnalysis, mapTracking, project?.photoLog || []);
 
   // Séparateur et sync cartes
   initPaneDivider();
@@ -338,17 +345,23 @@ function initTerrainButtons(map) {
 
   document.getElementById('btn-streetview')?.addEventListener('click', () => {
     const { lat, lon } = center();
-    window.open(`https://maps.google.com/?layer=c&cbll=${lat},${lon}`, '_blank', 'noopener,noreferrer');
+    const url = `https://maps.google.com/?layer=c&cbll=${lat},${lon}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+    addPhotoEntry('streetview', parseFloat(lat), parseFloat(lon), url);
   });
 
   document.getElementById('btn-mapillary')?.addEventListener('click', () => {
     const { lat, lon } = center();
-    window.open(`https://www.mapillary.com/app/?lat=${lat}&lng=${lon}&z=18`, '_blank', 'noopener,noreferrer');
+    const url = `https://www.mapillary.com/app/?lat=${lat}&lng=${lon}&z=18`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+    addPhotoEntry('mapillary', parseFloat(lat), parseFloat(lon), url);
   });
 
   document.getElementById('btn-panoramax')?.addEventListener('click', () => {
     const { lat, lon } = center();
-    window.open(`https://panoramax.ign.fr/?background=streets&focus=pic&map=17/${lat}/${lon}&speed=250&users=default`, '_blank', 'noopener,noreferrer');
+    const url = `https://panoramax.ign.fr/?background=streets&focus=pic&map=17/${lat}/${lon}&speed=250&users=default`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+    addPhotoEntry('panoramax', parseFloat(lat), parseFloat(lon), url);
   });
 }
 
