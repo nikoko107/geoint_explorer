@@ -85,14 +85,13 @@ function _navigateTo(lat, lng) {
   }
 }
 
-// Utilise Panoramax IGN : viewer photo plein écran, navigation 360° et flèches de déplacement natifs.
-// Google Maps embed (output=embed) charge l'interface cartographique complète qui masque la panorama.
 function _loadIframe() {
   const lat = _position.lat.toFixed(6);
   const lng = _position.lng.toFixed(6);
+  const hdg = Math.round(_heading);
   const iframe = document.getElementById('sv-iframe');
   if (iframe) {
-    iframe.src = `https://panoramax.ign.fr/?background=streets&focus=pic&map=17/${lat}/${lng}&speed=250&users=default`;
+    iframe.src = `https://www.instantstreetview.com/@${lat},${lng},${hdg}h,0p,1z`;
   }
 }
 
