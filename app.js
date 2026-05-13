@@ -5,7 +5,7 @@ import { initTracker, reloadNavLog, resetNavLog } from './modules/tracker.js';
 import { initAnnotations, initAnnotationsPanel, initAnnotationsTracking, reloadAnnotations } from './modules/annotations.js';
 import { initTrackingZones, reloadZones }                from './modules/tracking-zones.js';
 import { initExport, exportProject, parseProjectImport } from './modules/export.js';
-import { initStreetView } from './modules/streetview.js';
+import { initStreetView, reloadSvLog } from './modules/streetview.js';
 
 // ── Cartes ────────────────────────────────────────────────────────
 
@@ -180,6 +180,9 @@ function onProjectSwitch(project) {
 
   // Recharger zones
   reloadZones(project.trackingZones || []);
+
+  // Recharger journal Street View
+  reloadSvLog(project.svLog || []);
 }
 
 // Mémoriser la vue courante avant switch
@@ -258,7 +261,7 @@ function tryInit() {
   initTerrainButtons(mapAnalysis);
 
   // Street View intégré
-  initStreetView(mapAnalysis, mapTracking);
+  initStreetView(mapAnalysis, mapTracking, project?.svLog || []);
 
   // Séparateur et sync cartes
   initPaneDivider();

@@ -1,4 +1,6 @@
-// modules/streetview.js — Vue immersive Panoramax intégrée (navigation 360° + suivi carte de suivi)
+// modules/streetview.js — Vue immersive Street View + journal des positions visitées
+
+import { saveActiveProject } from './projects.js';
 
 let _mapAnalysis = null;
 let _mapTracking = null;
@@ -9,10 +11,15 @@ let _marker = null;
 let _trackingClickHandler = null;
 let _coverageVisible = false;
 let _coverageTimer = null;
+let _svLog = [];
 
-export function initStreetView(mapAnalysis, mapTracking) {
+export function initStreetView(mapAnalysis, mapTracking, initialSvLog = []) {
   _mapAnalysis = mapAnalysis;
   _mapTracking = mapTracking;
+  _svLog = initialSvLog;
+
+  _initSvLogSource();
+  _renderSvLog();
 
   document.getElementById('btn-sv-embed')?.addEventListener('click', () => {
     if (_active) { _closeSV(); return; }
@@ -34,6 +41,92 @@ export function initStreetView(mapAnalysis, mapTracking) {
   });
 }
 
+export function reloadSvLog(log) {
+  _svLog = log || [];
+  _renderSvLog();
+}
+
+export function getSvLog() {
+  return _svLog;
+}
+
+// ── SV Log : source et layers ────────────────────────────────────────
+
+function _initSvLogSource() {
+  _mapTracking.addSource('sv-log-source', {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] },
+  });
+
+  // Ligne reliant les positions visitées
+  _mapTracking.addLayer({
+    id: 'sv-log-line',
+    type: 'line',
+    source: 'sv-log-source',
+    filter: ['==', ['geometry-type'], 'LineString'],
+    paint: {
+      'line-color': '#a855f7',
+      'line-width': 2,
+      'line-opacity': 0.85,
+      'line-dasharray': [3, 2],
+    },
+  });
+
+  // Points à chaque position visitée
+  _mapTracking.addLayer({
+    id: 'sv-log-dots',
+    type: 'circle',
+    source: 'sv-log-source',
+    filter: ['==', ['geometry-type'], 'Point'],
+    paint: {
+      'circle-radius': 4,
+      'circle-color': '#a855f7',
+      'circle-opacity': 0.9,
+      'circle-stroke-width': 1.5,
+      'circle-stroke-color': '#fff',
+    },
+  });
+}
+
+function _renderSvLog() {
+  const src = _mapTracking.getSource('sv-log-source');
+  if (!src) return;
+
+  const features = [];
+
+  if (_svLog.length >= 2) {
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'LineString', coordinates: _svLog.map(e => e.coords) },
+      properties: {},
+    });
+  }
+
+  for (const entry of _svLog) {
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: entry.coords },
+      properties: { heading: entry.heading, timestamp: entry.timestamp },
+    });
+  }
+
+  src.setData({ type: 'FeatureCollection', features });
+}
+
+function _recordPosition(lat, lng, heading) {
+  const entry = {
+    id: `sv_${Date.now()}`,
+    coords: [lng, lat],
+    heading: Math.round(heading),
+    timestamp: new Date().toISOString(),
+  };
+  _svLog = [..._svLog, entry];
+  _renderSvLog();
+  saveActiveProject({ svLog: _svLog });
+}
+
+// ── Ouverture / fermeture ────────────────────────────────────────────
+
 function _openSV(lat, lng) {
   _position = { lat, lng };
   _heading = 0;
@@ -51,6 +144,7 @@ function _openSV(lat, lng) {
   _loadIframe();
   _createMarker();
   _attachTrackingClick();
+  _recordPosition(lat, lng, 0);
 }
 
 function _closeSV() {
@@ -83,7 +177,11 @@ function _navigateTo(lat, lng) {
     _marker.setLngLat([_position.lng, _position.lat]);
     _rotateArrow(_heading);
   }
+
+  _recordPosition(lat, lng, _heading);
 }
+
+// ── iframe ───────────────────────────────────────────────────────────
 
 function _loadIframe() {
   const lat = _position.lat.toFixed(6);
@@ -94,6 +192,8 @@ function _loadIframe() {
     iframe.src = `https://www.instantstreetview.com/@${lat},${lng},${hdg}h,0p,1z`;
   }
 }
+
+// ── Utilitaires ──────────────────────────────────────────────────────
 
 function _computeBearing(from, to) {
   const toRad = d => d * Math.PI / 180;
@@ -125,6 +225,8 @@ function _updateCoordsDisplay() {
   if (el) el.textContent = `${_position.lat.toFixed(5)}, ${_position.lng.toFixed(5)}`;
 }
 
+// ── Marqueur de position actuelle ────────────────────────────────────
+
 function _createMarker() {
   if (_marker) _marker.remove();
   const el = _buildMarkerEl();
@@ -154,6 +256,8 @@ function _rotateArrow(deg) {
   if (arrow) arrow.style.transform = `rotate(${deg}deg)`;
 }
 
+// ── Clic sur la carte de suivi ───────────────────────────────────────
+
 function _attachTrackingClick() {
   _trackingClickHandler = e => {
     if (!_active) return;
@@ -169,9 +273,8 @@ function _detachTrackingClick() {
   }
 }
 
-// Couche de disponibilité : séquences Panoramax IGN via API STAC (CORS ouvert, même routes que Google Street View en France).
-// Les tuiles Google Maps nécessitent des headers CORS que maps.googleapis.com ne fournit pas aux domaines tiers,
-// ce qui empêche leur chargement via fetch() utilisé par MapLibre 4.x.
+// ── Couche de disponibilité Panoramax ────────────────────────────────
+
 function _toggleCoverage() {
   _coverageVisible = !_coverageVisible;
   document.getElementById('btn-sv-coverage')?.classList.toggle('active', _coverageVisible);
