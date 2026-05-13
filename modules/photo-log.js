@@ -61,15 +61,15 @@ function _initSource() {
     source: 'photo-log-source',
     paint: {
       'circle-radius': 7,
-      'circle-color': ['match', ['get', 'service'],
+      'circle-color': 'rgba(0,0,0,0)',
+      'circle-stroke-width': 2,
+      'circle-stroke-color': ['match', ['get', 'service'],
         'streetview', SERVICE_COLORS.streetview,
         'mapillary',  SERVICE_COLORS.mapillary,
         'panoramax',  SERVICE_COLORS.panoramax,
         '#aaa',
       ],
-      'circle-stroke-width': 2,
-      'circle-stroke-color': '#fff',
-      'circle-opacity': 0.9,
+      'circle-stroke-opacity': 0.9,
     },
   });
 }
