@@ -40,7 +40,20 @@
       <div id="geocoder-overlay">
         <input id="geocoder-input" type="text" placeholder="Adresse ou lat, lon…" autocomplete="off" spellcheck="false" />
         <ul id="geocoder-results"></ul>
+        <div id="coords-display">
+          <div class="coords-row">
+            <span class="coords-label">WGS84</span>
+            <span id="coord-wgs84" class="monospace">—</span>
+            <button id="btn-copy-wgs84" class="btn-icon" title="Copier WGS84">⎘</button>
+          </div>
+          <div class="coords-row">
+            <span class="coords-label">Lambert 93</span>
+            <span id="coord-l93" class="monospace">—</span>
+            <button id="btn-copy-l93" class="btn-icon" title="Copier Lambert 93">⎘</button>
+          </div>
+        </div>
       </div>
+      <div id="map-crosshair"></div>
       <!-- Panneau liste annotations -->
       <aside id="annotations-panel" class="side-panel side-panel-analysis hidden">
         <div class="side-panel-header">
@@ -114,6 +127,12 @@
       <button id="btn-streetview"  class="btn-control btn-terrain" title="Ouvrir dans Google Street View">🚶 Street View</button>
       <button id="btn-mapillary"   class="btn-control btn-terrain" title="Ouvrir dans Mapillary">📷 Mapillary</button>
       <button id="btn-panoramax"   class="btn-control btn-terrain" title="Ouvrir dans Panoramax">🌐 Panoramax</button>
+      <button id="btn-suncalc"     class="btn-control btn-terrain" title="Ouvrir SunCalc à la position courante">☀ SunCalc</button>
+    </div>
+
+    <!-- Outils GEOINT -->
+    <div class="control-group">
+      <button id="btn-measure" class="btn-control btn-tool" title="Mesure linéaire (cliquez pour tracer, double-clic pour terminer)">📏 Mesure</button>
     </div>
 
     <!-- Export -->
@@ -225,7 +244,16 @@
     <button id="btn-poly-cancel" class="btn-danger">✕ Annuler</button>
   </div>
 
-  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <!-- Barre flottante mesure linéaire -->
+  <div id="measure-bar" class="poly-draw-bar hidden">
+    <span id="measure-hint" class="poly-draw-hint">Cliquez pour mesurer</span>
+    <button id="btn-measure-finish" class="btn-primary">✓ Terminer</button>
+    <button id="btn-measure-copy"   class="btn-secondary hidden" title="Copier la distance">⎘</button>
+    <button id="btn-measure-undo"   class="btn-secondary">↩ Annuler dernier</button>
+    <button id="btn-measure-cancel" class="btn-danger">✕ Annuler</button>
+  </div>
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>
