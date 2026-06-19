@@ -5,6 +5,7 @@ import { initTracker, reloadNavLog, resetNavLog } from './modules/tracker.js';
 import { initAnnotations, initAnnotationsPanel, initAnnotationsTracking, reloadAnnotations } from './modules/annotations.js';
 import { initTrackingZones, reloadZones }                from './modules/tracking-zones.js';
 import { initExport, exportProject, parseProjectImport } from './modules/export.js';
+import { initMeasure } from './modules/measure.js';
 
 // ── Cartes ────────────────────────────────────────────────────────
 
@@ -260,6 +261,12 @@ function tryInit() {
   // Vue terrain
   initTerrainButtons(mapAnalysis);
 
+  // Mesure linéaire
+  initMeasure(mapAnalysis);
+
+  // Popup coordonnées
+  initCoordsPopup(mapAnalysis);
+
   // Séparateur et sync cartes
   initPaneDivider();
   initTrackingSync();
@@ -431,6 +438,93 @@ function initTerrainButtons(map) {
     const { lat, lon } = center();
     window.open(`https://panoramax.ign.fr/?background=streets&focus=pic&map=17/${lat.toFixed(6)}/${lon.toFixed(6)}&speed=250&users=default`, '_blank', 'noopener,noreferrer');
     addSvVisit('panoramax', lat, lon);
+  });
+
+  document.getElementById('btn-suncalc')?.addEventListener('click', () => {
+    const { lat, lon } = center();
+    const zoom = Math.round(map.getZoom());
+    const now = new Date();
+    const date = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+    const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    window.open(`https://www.suncalc.org/#/${lat.toFixed(4)},${lon.toFixed(4)},${zoom}/${date}/${time}/1/3`, '_blank', 'noopener,noreferrer');
+  });
+}
+
+// ── Coordonnées centre carte (WGS84 + Lambert 93) ─────────────────
+
+function wgs84ToLambert93(latDeg, lonDeg) {
+  // Projection Lambert 93 — EPSG:2154 — calcul analytique
+  const a  = 6378137.0;           // demi-grand axe GRS80
+  const e  = 0.0818191910428158;  // première excentricité
+  const n  = 0.7256077650532670;  // exposant de la conique
+  const c  = 11754255.426096;     // constante de projection
+  const xs = 700000;              // fausse abscisse
+  const ys = 12655612.049876;     // fausse ordonnée
+  const lon0 = 3 * Math.PI / 180; // méridien d'origine (3° E)
+
+  const lat = latDeg * Math.PI / 180;
+  const lon = lonDeg * Math.PI / 180;
+
+  const esinLat = e * Math.sin(lat);
+  const L = Math.log(Math.tan(Math.PI/4 + lat/2) *
+            Math.pow((1 - esinLat) / (1 + esinLat), e/2));
+  const r = c * Math.exp(-n * L);
+  const γ = n * (lon - lon0);
+
+  const x = xs + r * Math.sin(γ);
+  const y = ys - r * Math.cos(γ);
+  return { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
+}
+
+function _copyWithFeedback(btn, text) {
+  navigator.clipboard?.writeText(text).catch(() => {});
+  const orig = btn.textContent;
+  btn.textContent = '✓';
+  setTimeout(() => { btn.textContent = orig; }, 1200);
+}
+
+function initCoordsPopup(map) {
+  const popup  = document.getElementById('coords-popup');
+  const btnOpen  = document.getElementById('btn-coords');
+  const btnClose = document.getElementById('btn-close-coords-popup');
+  const elWgs  = document.getElementById('coords-wgs84');
+  const elL93  = document.getElementById('coords-l93');
+  const btnCopyWgs = document.getElementById('btn-copy-wgs84');
+  const btnCopyL93 = document.getElementById('btn-copy-l93');
+  if (!popup || !btnOpen) return;
+
+  function openPopup() {
+    const c = map.getCenter();
+    const lat = c.lat, lon = c.lng;
+    const wgsStr = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+    const { x, y } = wgs84ToLambert93(lat, lon);
+    const l93Str = `${x.toFixed(1)} E, ${y.toFixed(1)} N`;
+    if (elWgs)  elWgs.textContent  = wgsStr;
+    if (elL93)  elL93.textContent  = l93Str;
+    if (btnCopyWgs) btnCopyWgs.dataset.val = wgsStr;
+    if (btnCopyL93) btnCopyL93.dataset.val = l93Str;
+    popup.classList.remove('hidden');
+  }
+
+  btnOpen.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (popup.classList.contains('hidden')) openPopup();
+    else popup.classList.add('hidden');
+  });
+
+  btnClose?.addEventListener('click', () => popup.classList.add('hidden'));
+
+  btnCopyWgs?.addEventListener('click', (e) => {
+    _copyWithFeedback(e.currentTarget, e.currentTarget.dataset.val);
+  });
+  btnCopyL93?.addEventListener('click', (e) => {
+    _copyWithFeedback(e.currentTarget, e.currentTarget.dataset.val);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!popup.classList.contains('hidden') && !popup.contains(e.target) && e.target !== btnOpen) {
+      popup.classList.add('hidden');
+    }
   });
 }
 

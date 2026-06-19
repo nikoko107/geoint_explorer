@@ -301,6 +301,38 @@ button:active { background: #1d2035; }
   white-space: nowrap;
 }
 
+/* ── Boutons outils GEOINT ────────────────────────────────────── */
+.btn-tool {
+  color: #86efac;
+  border-color: #14532d;
+}
+.btn-tool:hover { background: #052e16; border-color: #22c55e; color: #bbf7d0; }
+.btn-tool.active {
+  background: #166534;
+  border-color: #22c55e;
+  color: #bbf7d0;
+}
+
+/* ── Popup coordonnées ────────────────────────────────────────── */
+.coords-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+.coords-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  width: 72px;
+  flex-shrink: 0;
+}
+.coords-row .monospace {
+  flex: 1;
+  font-size: 11px;
+  color: var(--text);
+}
+
 /* ── Géocodeur overlay (top-left de la carte d'analyse) ───────── */
 #geocoder-overlay {
   position: absolute;

@@ -114,6 +114,13 @@
       <button id="btn-streetview"  class="btn-control btn-terrain" title="Ouvrir dans Google Street View">🚶 Street View</button>
       <button id="btn-mapillary"   class="btn-control btn-terrain" title="Ouvrir dans Mapillary">📷 Mapillary</button>
       <button id="btn-panoramax"   class="btn-control btn-terrain" title="Ouvrir dans Panoramax">🌐 Panoramax</button>
+      <button id="btn-suncalc"     class="btn-control btn-terrain" title="Ouvrir SunCalc à la position courante">☀ SunCalc</button>
+    </div>
+
+    <!-- Outils GEOINT -->
+    <div class="control-group">
+      <button id="btn-measure" class="btn-control btn-tool" title="Mesure linéaire (cliquez pour tracer, double-clic pour terminer)">📏 Mesure</button>
+      <button id="btn-coords"  class="btn-control btn-tool" title="Copier les coordonnées du centre (WGS84 / Lambert 93)">⊕ Coords</button>
     </div>
 
     <!-- Export -->
@@ -223,6 +230,35 @@
     <button id="btn-poly-finish" class="btn-primary">✓ Terminer</button>
     <button id="btn-poly-undo"   class="btn-secondary">↩ Annuler dernier</button>
     <button id="btn-poly-cancel" class="btn-danger">✕ Annuler</button>
+  </div>
+
+  <!-- Barre flottante mesure linéaire -->
+  <div id="measure-bar" class="poly-draw-bar hidden">
+    <span id="measure-hint" class="poly-draw-hint">Cliquez pour mesurer</span>
+    <button id="btn-measure-finish" class="btn-primary">✓ Terminer</button>
+    <button id="btn-measure-copy"   class="btn-secondary hidden" title="Copier la distance">⎘</button>
+    <button id="btn-measure-undo"   class="btn-secondary">↩ Annuler dernier</button>
+    <button id="btn-measure-cancel" class="btn-danger">✕ Annuler</button>
+  </div>
+
+  <!-- Popup coordonnées -->
+  <div id="coords-popup" class="floating-popup hidden">
+    <div class="popup-header">
+      <span>Coordonnées du centre</span>
+      <button id="btn-close-coords-popup" class="btn-icon">✕</button>
+    </div>
+    <div class="popup-body">
+      <div class="coords-row">
+        <span class="coords-label">WGS84</span>
+        <span id="coords-wgs84" class="monospace"></span>
+        <button id="btn-copy-wgs84" class="btn-icon" title="Copier WGS84">⎘</button>
+      </div>
+      <div class="coords-row">
+        <span class="coords-label">Lambert 93</span>
+        <span id="coords-l93" class="monospace"></span>
+        <button id="btn-copy-l93" class="btn-icon" title="Copier Lambert 93">⎘</button>
+      </div>
+    </div>
   </div>
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
