@@ -358,8 +358,19 @@ button:active { background: #1d2035; }
   border-radius: 6px;
   z-index: 200;
   min-width: 260px;
-  max-height: 400px;
+  max-height: 480px;
+  display: flex;
+  flex-direction: column;
+}
+
+#layers-list {
   overflow-y: auto;
+  flex: 1;
+}
+
+#layers-compare {
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
 }
 .dropdown-panel.hidden { display: none; }
 
