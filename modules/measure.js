@@ -135,10 +135,18 @@ function _showBar(visible) {
 
 // ── Start / stop ──────────────────────────────────────────────────
 
+function _bringToTop() {
+  // Remonter les couches de mesure au sommet de la pile de rendu
+  if (_map.getLayer(LYR_LINE)) _map.moveLayer(LYR_LINE);
+  if (_map.getLayer(LYR_PREV)) _map.moveLayer(LYR_PREV);
+  if (_map.getLayer(LYR_PTS))  _map.moveLayer(LYR_PTS);
+}
+
 function _start() {
   _active = true;
   _points = [];
   _preview = null;
+  _bringToTop();
   _map.getCanvas().style.cursor = 'crosshair';
   _map.doubleClickZoom.disable();
   document.getElementById('btn-measure')?.classList.add('active');
