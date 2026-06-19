@@ -407,6 +407,17 @@ export function initCompareMode(mainMap, layerDef) {
     attributionControl: false,
   });
 
+  // Paires sources à synchroniser depuis mainMap → compare map
+  const OVERLAY_PAIRS = [
+    { srcId: 'annotations-source',    dstId: 'cmp-annot-src' },
+    { srcId: 'zones-analysis-source', dstId: 'cmp-zones-src' },
+  ];
+
+  function _srcData(id) {
+    return mainMap.getSource(id)?.serialize()?.data
+        ?? { type: 'FeatureCollection', features: [] };
+  }
+
   _compareMap.on('load', () => {
     const tiles = layerDef.type === 'wmts' ? [wmtsUrl(layerDef)] : layerDef.tiles;
     _compareMap.addSource('compare-src', {
@@ -415,11 +426,50 @@ export function initCompareMode(mainMap, layerDef) {
       attribution: layerDef.attribution || '© IGN-Géoplateforme',
     });
     _compareMap.addLayer({ id: 'compare-lyr', type: 'raster', source: 'compare-src' });
+
+    // Dupliquer les sources overlay (annotations + zones)
+    for (const { srcId, dstId } of OVERLAY_PAIRS) {
+      _compareMap.addSource(dstId, { type: 'geojson', data: _srcData(srcId) });
+    }
+
+    // Cercles annotations (identiques au layer principal)
+    _compareMap.addLayer({
+      id: 'cmp-annot-lyr', type: 'circle', source: 'cmp-annot-src',
+      paint: {
+        'circle-radius': 7,
+        'circle-color': ['get', 'color'],
+        'circle-stroke-width': 1.5,
+        'circle-stroke-color': '#fff',
+        'circle-opacity': 0.9,
+      },
+    });
+
+    // Contours zones (halo + ligne colorée)
+    _compareMap.addLayer({
+      id: 'cmp-zones-halo', type: 'line', source: 'cmp-zones-src',
+      paint: { 'line-color': '#ffffff', 'line-width': 5, 'line-opacity': 0.3 },
+    });
+    _compareMap.addLayer({
+      id: 'cmp-zones-lyr', type: 'line', source: 'cmp-zones-src',
+      paint: { 'line-color': ['get', 'color'], 'line-width': 2.5 },
+    });
+
     _compareMap.jumpTo({
       center: mainMap.getCenter(), zoom: mainMap.getZoom(),
       bearing: mainMap.getBearing(), pitch: mainMap.getPitch(),
     });
   });
+
+  // Synchroniser les overlays quand les sources changent sur mainMap
+  const _overlaySync = (e) => {
+    if (!_compareMap?.isStyleLoaded()) return;
+    for (const { srcId, dstId } of OVERLAY_PAIRS) {
+      if (e.sourceId === srcId && e.isSourceLoaded) {
+        _compareMap.getSource(dstId)?.setData(_srcData(srcId));
+      }
+    }
+  };
+  mainMap.on('sourcedata', _overlaySync);
 
   _compareSyncFn = () => {
     if (!_compareMap) return;
@@ -429,6 +479,9 @@ export function initCompareMode(mainMap, layerDef) {
     });
   };
   mainMap.on('move', _compareSyncFn);
+  // Stocker _overlaySync pour nettoyage dans destroyCompareMode
+  _compareMap._overlaySync = _overlaySync;
+  _compareMap._mainMapRef   = mainMap;
   _compareMainMap = mainMap;
 
   // Slider handle
@@ -480,8 +533,13 @@ export function destroyCompareMode() {
   _compareSlider?._cleanup?.();
   _compareSlider?.remove();
   _compareSlider = null;
-  _compareMap?.remove();
-  _compareMap = null;
+  if (_compareMap) {
+    const mainRef  = _compareMap._mainMapRef;
+    const syncFn   = _compareMap._overlaySync;
+    if (mainRef && syncFn) mainRef.off('sourcedata', syncFn);
+    _compareMap.remove();
+    _compareMap = null;
+  }
   document.getElementById('map-compare-container')?.remove();
   if (_compareMainMap && _compareSyncFn) {
     _compareMainMap.off('move', _compareSyncFn);

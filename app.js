@@ -299,6 +299,9 @@ mapTracking.on('load', () => { trackingReady = true; tryInit(); });
   document.getElementById('btn-confirm-reset-navlog')?.addEventListener('click', () => {
     close();
     resetNavLog();
+    // Vider aussi les visites terrain (Street View / Mapillary / Panoramax)
+    saveActiveProject({ streetviewVisits: [] });
+    reloadSvVisits([]);
   });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') close();
