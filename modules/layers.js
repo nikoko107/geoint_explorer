@@ -283,42 +283,51 @@ function _buildUI() {
 
   _updateZoomWarnings();
 
-  // Section "Comparer avec"
-  const compareSep = document.createElement('div');
-  compareSep.className = 'layer-group-sep';
-  compareSep.textContent = 'Comparer avec';
-  container.appendChild(compareSep);
+  // Section "Comparer avec" — dans #layers-compare (footer épinglé hors scroll)
+  const compareContainer = document.getElementById('layers-compare');
+  if (compareContainer) {
+    // Conserver la valeur sélectionnée avant de reconstruire l'UI
+    const prevVal = document.getElementById('compare-layer-select')?.value || '';
+    compareContainer.innerHTML = '';
 
-  const compareBody = document.createElement('div');
-  compareBody.className = 'layer-item';
+    const sep = document.createElement('div');
+    sep.className = 'layer-group-sep';
+    sep.textContent = 'Comparer avec';
+    compareContainer.appendChild(sep);
 
-  const sel = document.createElement('select');
-  sel.id = 'compare-layer-select';
-  sel.style.cssText = 'width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:4px 8px;font-size:12px;';
+    const body = document.createElement('div');
+    body.className = 'layer-item';
 
-  const none = document.createElement('option');
-  none.value = '';
-  none.textContent = '— Désactiver —';
-  sel.appendChild(none);
+    const sel = document.createElement('select');
+    sel.id = 'compare-layer-select';
+    sel.style.cssText = 'width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:4px 8px;font-size:12px;';
 
-  for (const def of LAYER_DEFS) {
-    const opt = document.createElement('option');
-    opt.value = def.id;
-    opt.textContent = `${def.group} — ${def.label}`;
-    sel.appendChild(opt);
-  }
+    const none = document.createElement('option');
+    none.value = '';
+    none.textContent = '— Désactiver —';
+    sel.appendChild(none);
 
-  sel.addEventListener('change', () => {
-    if (!sel.value) {
-      destroyCompareMode();
-    } else {
-      const def = LAYER_DEFS.find(d => d.id === sel.value);
-      if (def) initCompareMode(_map, def);
+    for (const def of LAYER_DEFS) {
+      const opt = document.createElement('option');
+      opt.value = def.id;
+      opt.textContent = `${def.group} — ${def.label}`;
+      sel.appendChild(opt);
     }
-  });
 
-  compareBody.appendChild(sel);
-  container.appendChild(compareBody);
+    if (prevVal) sel.value = prevVal;
+
+    sel.addEventListener('change', () => {
+      if (!sel.value) {
+        destroyCompareMode();
+      } else {
+        const def = LAYER_DEFS.find(d => d.id === sel.value);
+        if (def) initCompareMode(_map, def);
+      }
+    });
+
+    body.appendChild(sel);
+    compareContainer.appendChild(body);
+  }
 }
 
 function _wireMapZoom() {
@@ -361,21 +370,38 @@ let _compareSlider   = null;
 let _compareSyncFn   = null;
 
 export function resizeCompareMap() {
+  const overlayEl  = document.getElementById('map-compare-container');
+  const innerWrap  = document.getElementById('map-compare-inner');
+  if (!overlayEl || !innerWrap || !_compareMainMap) return;
+  const pane = _compareMainMap.getContainer().parentElement;
+  const w    = pane.getBoundingClientRect().width;
+  const pct  = parseFloat(overlayEl.style.left) || 50;
+  innerWrap.style.width = `${w}px`;
+  innerWrap.style.left  = `-${(pct / 100) * w}px`;
   _compareMap?.resize();
 }
 
 export function initCompareMode(mainMap, layerDef) {
   destroyCompareMode();
 
-  const pane = mainMap.getContainer().parentElement; // #analysis-pane
+  const pane    = mainMap.getContainer().parentElement; // #analysis-pane
+  const paneW   = () => pane.getBoundingClientRect().width;
 
+  // Conteneur clip (overflow:hidden) — démarre à 50% de la gauche
   const overlayEl = document.createElement('div');
   overlayEl.id = 'map-compare-container';
-  overlayEl.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;clip-path:inset(0 0 0 50%);z-index:6;';
+  overlayEl.style.cssText = 'position:absolute;top:0;left:50%;right:0;bottom:0;overflow:hidden;pointer-events:none;z-index:6;';
   pane.appendChild(overlayEl);
 
+  // Inner wrapper pleine largeur du panneau : la 2ème map se positionne
+  // comme si elle couvrait tout le panneau, mais seule la partie droite est visible.
+  const innerWrap = document.createElement('div');
+  innerWrap.id = 'map-compare-inner';
+  innerWrap.style.cssText = `position:absolute;top:0;bottom:0;right:0;width:${paneW()}px;left:-${paneW() * 0.5}px;`;
+  overlayEl.appendChild(innerWrap);
+
   _compareMap = new maplibregl.Map({
-    container: overlayEl,
+    container: innerWrap,
     style: { version: 8, sources: {}, layers: [] },
     interactive: false,
     attributionControl: false,
@@ -419,9 +445,13 @@ export function initCompareMode(mainMap, layerDef) {
 
   const onMove = (clientX) => {
     const rect = pane.getBoundingClientRect();
-    const pct = Math.min(95, Math.max(5, ((clientX - rect.left) / rect.width) * 100));
+    const w    = rect.width;
+    const pct  = Math.min(95, Math.max(5, ((clientX - rect.left) / w) * 100));
     _compareSlider.style.left = `${pct}%`;
-    overlayEl.style.clipPath = `inset(0 0 0 ${pct}%)`;
+    overlayEl.style.left      = `${pct}%`;
+    innerWrap.style.width     = `${w}px`;
+    innerWrap.style.left      = `-${(pct / 100) * w}px`;
+    _compareMap?.resize();
   };
 
   const onMouseDown = (e) => { e.preventDefault(); dragging = true; document.body.style.cursor = 'ew-resize'; document.body.style.userSelect = 'none'; };
