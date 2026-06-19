@@ -143,6 +143,7 @@ function _bringToTop() {
 }
 
 function _start() {
+  _initSources(); // crée les sources si elles n'existent pas encore
   _active = true;
   _points = [];
   _preview = null;
