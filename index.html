@@ -41,6 +41,24 @@
         <input id="geocoder-input" type="text" placeholder="Adresse ou lat, lon…" autocomplete="off" spellcheck="false" />
         <ul id="geocoder-results"></ul>
       </div>
+      <!-- Panneau liste annotations -->
+      <aside id="annotations-panel" class="side-panel side-panel-analysis hidden">
+        <div class="side-panel-header">
+          <span>Annotations</span>
+          <button id="btn-close-annotations-panel" class="btn-icon">✕</button>
+        </div>
+        <div class="side-panel-filters">
+          <input id="annotation-search" type="text" placeholder="Rechercher…" />
+          <select id="annotation-filter-category">
+            <option value="">Toutes catégories</option>
+            <option value="Info">Info</option>
+            <option value="Alerte">Alerte</option>
+            <option value="Traité">Traité</option>
+            <option value="À vérifier">À vérifier</option>
+          </select>
+        </div>
+        <ul id="annotations-list"></ul>
+      </aside>
     </section>
 
     <div id="pane-divider"></div>
@@ -156,25 +174,6 @@
       <button id="btn-delete-annotation" class="btn-danger">Supprimer</button>
     </div>
   </div>
-
-  <!-- Panneau liste annotations -->
-  <aside id="annotations-panel" class="side-panel side-panel-analysis hidden">
-    <div class="side-panel-header">
-      <span>Annotations</span>
-      <button id="btn-close-annotations-panel" class="btn-icon">✕</button>
-    </div>
-    <div class="side-panel-filters">
-      <input id="annotation-search" type="text" placeholder="Rechercher…" />
-      <select id="annotation-filter-category">
-        <option value="">Toutes catégories</option>
-        <option value="Info">Info</option>
-        <option value="Alerte">Alerte</option>
-        <option value="Traité">Traité</option>
-        <option value="À vérifier">À vérifier</option>
-      </select>
-    </div>
-    <ul id="annotations-list"></ul>
-  </aside>
 
   <!-- Popup zone de suivi -->
   <div id="zone-popup" class="floating-popup hidden">
