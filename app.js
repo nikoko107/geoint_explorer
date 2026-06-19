@@ -1,6 +1,6 @@
 import { initStorage }        from './modules/storage.js';
 import { initProjects, getActiveProject, saveActiveProject, getActiveId, createAndSwitchProject } from './modules/projects.js';
-import { initLayers, initLayersPanel, reloadLayers, getLayerConfig } from './modules/layers.js';
+import { initLayers, initLayersPanel, reloadLayers, getLayerConfig, resizeCompareMap } from './modules/layers.js';
 import { initTracker, reloadNavLog, resetNavLog } from './modules/tracker.js';
 import { initAnnotations, initAnnotationsPanel, initAnnotationsTracking, reloadAnnotations } from './modules/annotations.js';
 import { initTrackingZones, reloadZones }                from './modules/tracking-zones.js';
@@ -121,6 +121,7 @@ function initPaneDivider() {
     document.body.style.userSelect = '';
     mapAnalysis.resize();
     mapTracking.resize();
+    resizeCompareMap();
   });
 
   // Double-clic → reset 50/50
@@ -179,6 +180,9 @@ function onProjectSwitch(project) {
 
   // Recharger zones
   reloadZones(project.trackingZones || []);
+
+  // Recharger visites terrain
+  reloadSvVisits(project.streetviewVisits || []);
 }
 
 // Mémoriser la vue courante avant switch
@@ -260,6 +264,9 @@ function tryInit() {
   initPaneDivider();
   initTrackingSync();
 
+  // Visites terrain (Street View / Mapillary / Panoramax)
+  initSvVisits(mapTracking, project?.streetviewVisits || []);
+
   // Labels villes/routes/rues Carto ajoutés EN DERNIER sur la carte de suivi
   // afin d'être au-dessus de tous les layers custom (navlog, zones).
   mapTracking.addSource('carto-labels', {
@@ -328,27 +335,99 @@ document.getElementById('btn-export-project')?.addEventListener('click', exportP
   });
 }
 
+// ── Visites Street View / Mapillary / Panoramax ───────────────────
+
+const SV_SOURCE = 'sv-visits-source';
+const SV_LAYER  = 'sv-visits-layer';
+
+const SV_COLORS = {
+  streetview: '#4285F4',
+  mapillary:  '#05CB63',
+  panoramax:  '#FF6B35',
+};
+
+function initSvVisits(trackingMap, visits) {
+  const features = _svFeatures(visits || []);
+  trackingMap.addSource(SV_SOURCE, { type: 'geojson', data: { type: 'FeatureCollection', features } });
+  trackingMap.addLayer({
+    id: SV_LAYER, type: 'circle', source: SV_SOURCE,
+    paint: {
+      'circle-radius': 7,
+      'circle-color': ['match', ['get', 'service'],
+        'streetview', SV_COLORS.streetview,
+        'mapillary',  SV_COLORS.mapillary,
+        'panoramax',  SV_COLORS.panoramax,
+        '#ffffff',
+      ],
+      'circle-stroke-width': 2,
+      'circle-stroke-color': '#ffffff',
+      'circle-opacity': 0.9,
+    },
+  });
+
+  // Tooltip
+  const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: 'tracking-tooltip' });
+  trackingMap.on('mouseenter', SV_LAYER, e => {
+    trackingMap.getCanvas().style.cursor = 'pointer';
+    const p = e.features[0].properties;
+    const d = new Date(p.timestamp);
+    const time = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    const labels = { streetview: 'Google Street View', mapillary: 'Mapillary', panoramax: 'Panoramax' };
+    popup.setLngLat(e.lngLat).setHTML(`${time} — ${labels[p.service] || p.service}`).addTo(trackingMap);
+  });
+  trackingMap.on('mouseleave', SV_LAYER, () => {
+    trackingMap.getCanvas().style.cursor = '';
+    popup.remove();
+  });
+}
+
+function reloadSvVisits(visits) {
+  const src = mapTracking.getSource(SV_SOURCE);
+  if (src) src.setData({ type: 'FeatureCollection', features: _svFeatures(visits || []) });
+}
+
+function addSvVisit(service, lat, lon) {
+  const project = getActiveProject();
+  if (!project) return;
+  if (!project.streetviewVisits) project.streetviewVisits = [];
+  const visit = { id: Date.now(), service, lat, lon, timestamp: new Date().toISOString() };
+  project.streetviewVisits.push(visit);
+  saveActiveProject({ streetviewVisits: project.streetviewVisits });
+  reloadSvVisits(project.streetviewVisits);
+}
+
+function _svFeatures(visits) {
+  return visits.map(v => ({
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [v.lon, v.lat] },
+    properties: { service: v.service, timestamp: v.timestamp },
+  }));
+}
+
 // ── Vue terrain ───────────────────────────────────────────────────
 
 function initTerrainButtons(map) {
   function center() {
     const c = map.getCenter();
-    return { lat: c.lat.toFixed(6), lon: c.lng.toFixed(6) };
+    return { lat: c.lat, lon: c.lng };
   }
 
   document.getElementById('btn-streetview')?.addEventListener('click', () => {
     const { lat, lon } = center();
-    window.open(`https://maps.google.com/?layer=c&cbll=${lat},${lon}`, '_blank', 'noopener,noreferrer');
+    window.open(`https://maps.google.com/?layer=c&cbll=${lat.toFixed(6)},${lon.toFixed(6)}`, '_blank', 'noopener,noreferrer');
+    addSvVisit('streetview', lat, lon);
   });
 
   document.getElementById('btn-mapillary')?.addEventListener('click', () => {
     const { lat, lon } = center();
-    window.open(`https://www.mapillary.com/app/?lat=${lat}&lng=${lon}&z=18`, '_blank', 'noopener,noreferrer');
+    window.open(`https://www.mapillary.com/app/?lat=${lat.toFixed(6)}&lng=${lon.toFixed(6)}&z=18`, '_blank', 'noopener,noreferrer');
+    addSvVisit('mapillary', lat, lon);
   });
 
   document.getElementById('btn-panoramax')?.addEventListener('click', () => {
     const { lat, lon } = center();
-    window.open(`https://panoramax.ign.fr/?background=streets&focus=pic&map=17/${lat}/${lon}&speed=250&users=default`, '_blank', 'noopener,noreferrer');
+    window.open(`https://panoramax.ign.fr/?background=streets&focus=pic&map=17/${lat.toFixed(6)}/${lon.toFixed(6)}&speed=250&users=default`, '_blank', 'noopener,noreferrer');
+    addSvVisit('panoramax', lat, lon);
   });
 }
 
