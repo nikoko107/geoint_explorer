@@ -72,6 +72,34 @@ const LAYER_DEFS = [
     minZoom: 0, maxZoom: 22,
     attribution: '© Google',
   },
+  // ── Esri ──────────────────────────────────────────────────────
+  {
+    id: 'esri-satellite',
+    label: 'Satellite',
+    group: 'Esri',
+    type: 'xyz',
+    tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+    minZoom: 1, maxZoom: 19,
+    attribution: '© Esri, Maxar, Earthstar Geographics',
+  },
+  {
+    id: 'esri-clarity',
+    label: 'Clarity (HR)',
+    group: 'Esri',
+    type: 'xyz',
+    tiles: ['https://clarity.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+    minZoom: 1, maxZoom: 21,
+    attribution: '© Esri Clarity',
+  },
+  {
+    id: 'esri-topo',
+    label: 'Topo',
+    group: 'Esri',
+    type: 'xyz',
+    tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'],
+    minZoom: 1, maxZoom: 19,
+    attribution: '© Esri, HERE, Garmin',
+  },
 ];
 
 export function getLayerDefs() { return LAYER_DEFS; }
