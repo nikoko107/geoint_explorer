@@ -74,6 +74,8 @@ const LAYER_DEFS = [
   },
 ];
 
+export function getLayerDefs() { return LAYER_DEFS; }
+
 function wmtsUrl(def) {
   return `https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=${def.layer}&STYLE=normal&FORMAT=${def.format}&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}`;
 }
@@ -280,6 +282,43 @@ function _buildUI() {
   }
 
   _updateZoomWarnings();
+
+  // Section "Comparer avec"
+  const compareSep = document.createElement('div');
+  compareSep.className = 'layer-group-sep';
+  compareSep.textContent = 'Comparer avec';
+  container.appendChild(compareSep);
+
+  const compareBody = document.createElement('div');
+  compareBody.className = 'layer-item';
+
+  const sel = document.createElement('select');
+  sel.id = 'compare-layer-select';
+  sel.style.cssText = 'width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:4px 8px;font-size:12px;';
+
+  const none = document.createElement('option');
+  none.value = '';
+  none.textContent = '— Désactiver —';
+  sel.appendChild(none);
+
+  for (const def of LAYER_DEFS) {
+    const opt = document.createElement('option');
+    opt.value = def.id;
+    opt.textContent = `${def.group} — ${def.label}`;
+    sel.appendChild(opt);
+  }
+
+  sel.addEventListener('change', () => {
+    if (!sel.value) {
+      destroyCompareMode();
+    } else {
+      const def = LAYER_DEFS.find(d => d.id === sel.value);
+      if (def) initCompareMode(_map, def);
+    }
+  });
+
+  compareBody.appendChild(sel);
+  container.appendChild(compareBody);
 }
 
 function _wireMapZoom() {
@@ -312,6 +351,113 @@ function _setCfg(id, key, value) {
 
 function _save() {
   saveActiveProject({ layerConfig: getLayerConfig() });
+}
+
+// ── Mode comparaison (slicer) ─────────────────────────────────────
+
+let _compareMap      = null;
+let _compareMainMap  = null;
+let _compareSlider   = null;
+let _compareSyncFn   = null;
+
+export function resizeCompareMap() {
+  _compareMap?.resize();
+}
+
+export function initCompareMode(mainMap, layerDef) {
+  destroyCompareMode();
+
+  const pane = mainMap.getContainer().parentElement; // #analysis-pane
+
+  const overlayEl = document.createElement('div');
+  overlayEl.id = 'map-compare-container';
+  overlayEl.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;clip-path:inset(0 0 0 50%);z-index:6;';
+  pane.appendChild(overlayEl);
+
+  _compareMap = new maplibregl.Map({
+    container: overlayEl,
+    style: { version: 8, sources: {}, layers: [] },
+    interactive: false,
+    attributionControl: false,
+  });
+
+  _compareMap.on('load', () => {
+    const tiles = layerDef.type === 'wmts' ? [wmtsUrl(layerDef)] : layerDef.tiles;
+    _compareMap.addSource('compare-src', {
+      type: 'raster', tiles, tileSize: 256,
+      minzoom: layerDef.minZoom, maxzoom: layerDef.maxZoom,
+      attribution: layerDef.attribution || '© IGN-Géoplateforme',
+    });
+    _compareMap.addLayer({ id: 'compare-lyr', type: 'raster', source: 'compare-src' });
+    _compareMap.jumpTo({
+      center: mainMap.getCenter(), zoom: mainMap.getZoom(),
+      bearing: mainMap.getBearing(), pitch: mainMap.getPitch(),
+    });
+  });
+
+  _compareSyncFn = () => {
+    if (!_compareMap) return;
+    _compareMap.jumpTo({
+      center: mainMap.getCenter(), zoom: mainMap.getZoom(),
+      bearing: mainMap.getBearing(), pitch: mainMap.getPitch(),
+    });
+  };
+  mainMap.on('move', _compareSyncFn);
+  _compareMainMap = mainMap;
+
+  // Slider handle
+  _compareSlider = document.createElement('div');
+  _compareSlider.id = 'compare-slider';
+
+  const handle = document.createElement('div');
+  handle.className = 'compare-slider-handle';
+  handle.textContent = '◀▶';
+  _compareSlider.appendChild(handle);
+  pane.appendChild(_compareSlider);
+
+  let dragging = false;
+
+  const onMove = (clientX) => {
+    const rect = pane.getBoundingClientRect();
+    const pct = Math.min(95, Math.max(5, ((clientX - rect.left) / rect.width) * 100));
+    _compareSlider.style.left = `${pct}%`;
+    overlayEl.style.clipPath = `inset(0 0 0 ${pct}%)`;
+  };
+
+  const onMouseDown = (e) => { e.preventDefault(); dragging = true; document.body.style.cursor = 'ew-resize'; document.body.style.userSelect = 'none'; };
+  const onMouseMove = (e) => { if (dragging) onMove(e.clientX); };
+  const onMouseUp   = () => { if (!dragging) return; dragging = false; document.body.style.cursor = ''; document.body.style.userSelect = ''; };
+  const onTouchStart = (e) => { e.preventDefault(); dragging = true; };
+  const onTouchMove  = (e) => { if (dragging && e.touches[0]) onMove(e.touches[0].clientX); };
+  const onTouchEnd   = () => { dragging = false; };
+
+  _compareSlider.addEventListener('mousedown',  onMouseDown);
+  _compareSlider.addEventListener('touchstart', onTouchStart, { passive: false });
+  document.addEventListener('mousemove',  onMouseMove);
+  document.addEventListener('mouseup',    onMouseUp);
+  document.addEventListener('touchmove',  onTouchMove, { passive: false });
+  document.addEventListener('touchend',   onTouchEnd);
+
+  _compareSlider._cleanup = () => {
+    document.removeEventListener('mousemove',  onMouseMove);
+    document.removeEventListener('mouseup',    onMouseUp);
+    document.removeEventListener('touchmove',  onTouchMove);
+    document.removeEventListener('touchend',   onTouchEnd);
+  };
+}
+
+export function destroyCompareMode() {
+  _compareSlider?._cleanup?.();
+  _compareSlider?.remove();
+  _compareSlider = null;
+  _compareMap?.remove();
+  _compareMap = null;
+  document.getElementById('map-compare-container')?.remove();
+  if (_compareMainMap && _compareSyncFn) {
+    _compareMainMap.off('move', _compareSyncFn);
+    _compareSyncFn = null;
+  }
+  _compareMainMap = null;
 }
 
 // ── Toggle panneau couches ────────────────────────────────────────

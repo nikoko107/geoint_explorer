@@ -695,6 +695,41 @@ body.draw-poly-mode #map-tracking .maplibregl-canvas {
   cursor: crosshair !important;
 }
 
+/* ── Compare slicer ──────────────────────────────────────────────── */
+#compare-slider {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 4px;
+  height: 100%;
+  background: rgba(255,255,255,0.85);
+  cursor: ew-resize;
+  z-index: 7;
+  pointer-events: all;
+  transform: translateX(-50%);
+  box-shadow: 0 0 8px rgba(0,0,0,0.5);
+}
+
+.compare-slider-handle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 34px;
+  height: 34px;
+  background: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.55);
+  font-size: 11px;
+  color: #333;
+  cursor: ew-resize;
+  user-select: none;
+  letter-spacing: -1px;
+}
+
 /* ── Responsive < 900px ───────────────────────────────────────── */
 @media (max-width: 900px) {
   #maps-container {
