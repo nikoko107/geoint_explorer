@@ -43,41 +43,45 @@ function emptyFC(type = 'LineString') {
 }
 
 function _initSources() {
-  _map.addSource(SRC_LINE, { type: 'geojson', data: emptyFC('LineString') });
-  _map.addSource(SRC_PTS,  { type: 'geojson', data: emptyFC('Point') });
-  _map.addSource(SRC_PREV, { type: 'geojson', data: emptyFC('LineString') });
+  if (_map.getSource(SRC_LINE)) return; // déjà initialisé
+
+  const emptyLine = { type: 'FeatureCollection', features: [] };
+  _map.addSource(SRC_LINE, { type: 'geojson', data: emptyLine });
+  _map.addSource(SRC_PTS,  { type: 'geojson', data: emptyLine });
+  _map.addSource(SRC_PREV, { type: 'geojson', data: emptyLine });
 
   _map.addLayer({ id: LYR_LINE, type: 'line', source: SRC_LINE,
-    paint: { 'line-color': '#f87171', 'line-width': 2, 'line-dasharray': [4, 2] } });
+    paint: { 'line-color': '#f87171', 'line-width': 3 } });
 
   _map.addLayer({ id: LYR_PREV, type: 'line', source: SRC_PREV,
-    paint: { 'line-color': '#f87171', 'line-width': 1.5,
-             'line-dasharray': [3, 3], 'line-opacity': 0.6 } });
+    paint: { 'line-color': '#fbbf24', 'line-width': 2,
+             'line-dasharray': [4, 3], 'line-opacity': 0.8 } });
 
   _map.addLayer({ id: LYR_PTS, type: 'circle', source: SRC_PTS,
-    paint: { 'circle-radius': 5, 'circle-color': '#fff',
+    paint: { 'circle-radius': 6, 'circle-color': '#fff',
              'circle-stroke-width': 2, 'circle-stroke-color': '#f87171' } });
 }
 
 function _updateLine() {
-  _map.getSource(SRC_LINE).setData({
+  _map.getSource(SRC_LINE)?.setData({
     type: 'FeatureCollection',
     features: _points.length >= 2
       ? [{ type: 'Feature', geometry: { type: 'LineString', coordinates: _points }, properties: {} }]
       : [],
   });
-  _map.getSource(SRC_PTS).setData({
+  _map.getSource(SRC_PTS)?.setData({
     type: 'FeatureCollection',
     features: _points.map(c => ({ type: 'Feature', geometry: { type: 'Point', coordinates: c }, properties: {} })),
   });
 }
 
 function _updatePreview() {
+  const empty = { type: 'FeatureCollection', features: [] };
   if (!_preview || _points.length === 0) {
-    _map.getSource(SRC_PREV).setData(emptyFC('LineString'));
+    _map.getSource(SRC_PREV)?.setData(empty);
     return;
   }
-  _map.getSource(SRC_PREV).setData({
+  _map.getSource(SRC_PREV)?.setData({
     type: 'FeatureCollection',
     features: [{ type: 'Feature',
       geometry: { type: 'LineString', coordinates: [_points[_points.length - 1], _preview] },
@@ -88,8 +92,10 @@ function _updatePreview() {
 // ── Handlers événements ───────────────────────────────────────────
 
 function _onClick(e) {
+  // Ignorer si c'est le 2e clic d'un double-clic (géré par _onDblClick)
   _points.push([e.lngLat.lng, e.lngLat.lat]);
   _updateLine();
+  _updatePreview();
   _updateHint();
 }
 
@@ -103,8 +109,9 @@ function _onDblClick(e) {
 function _onMove(e) {
   _preview = [e.lngLat.lng, e.lngLat.lat];
   _updatePreview();
-  // Afficher distance avec segment courant en preview
-  if (_points.length > 0) {
+  if (_points.length === 0) {
+    _setHint('Cliquez pour placer le premier point');
+  } else {
     const d = totalDist([..._points, _preview]);
     _setHint(`Distance : ${formatDist(d)}`);
   }
@@ -186,8 +193,11 @@ function _cancel() {
 
 export function initMeasure(map) {
   _map = map;
-  map.on('load', _initSources);
-  if (map.isStyleLoaded()) _initSources();
+  if (map.isStyleLoaded()) {
+    _initSources();
+  } else {
+    map.once('load', _initSources);
+  }
 
   document.getElementById('btn-measure')?.addEventListener('click', toggleMeasure);
 
