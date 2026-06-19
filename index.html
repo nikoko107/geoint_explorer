@@ -40,7 +40,20 @@
       <div id="geocoder-overlay">
         <input id="geocoder-input" type="text" placeholder="Adresse ou lat, lon…" autocomplete="off" spellcheck="false" />
         <ul id="geocoder-results"></ul>
+        <div id="coords-display">
+          <div class="coords-row">
+            <span class="coords-label">WGS84</span>
+            <span id="coord-wgs84" class="monospace">—</span>
+            <button id="btn-copy-wgs84" class="btn-icon" title="Copier WGS84">⎘</button>
+          </div>
+          <div class="coords-row">
+            <span class="coords-label">Lambert 93</span>
+            <span id="coord-l93" class="monospace">—</span>
+            <button id="btn-copy-l93" class="btn-icon" title="Copier Lambert 93">⎘</button>
+          </div>
+        </div>
       </div>
+      <div id="map-crosshair"></div>
       <!-- Panneau liste annotations -->
       <aside id="annotations-panel" class="side-panel side-panel-analysis hidden">
         <div class="side-panel-header">
@@ -120,7 +133,6 @@
     <!-- Outils GEOINT -->
     <div class="control-group">
       <button id="btn-measure" class="btn-control btn-tool" title="Mesure linéaire (cliquez pour tracer, double-clic pour terminer)">📏 Mesure</button>
-      <button id="btn-coords"  class="btn-control btn-tool" title="Copier les coordonnées du centre (WGS84 / Lambert 93)">⊕ Coords</button>
     </div>
 
     <!-- Export -->
@@ -241,27 +253,7 @@
     <button id="btn-measure-cancel" class="btn-danger">✕ Annuler</button>
   </div>
 
-  <!-- Popup coordonnées -->
-  <div id="coords-popup" class="floating-popup hidden">
-    <div class="popup-header">
-      <span>Coordonnées du centre</span>
-      <button id="btn-close-coords-popup" class="btn-icon">✕</button>
-    </div>
-    <div class="popup-body">
-      <div class="coords-row">
-        <span class="coords-label">WGS84</span>
-        <span id="coords-wgs84" class="monospace"></span>
-        <button id="btn-copy-wgs84" class="btn-icon" title="Copier WGS84">⎘</button>
-      </div>
-      <div class="coords-row">
-        <span class="coords-label">Lambert 93</span>
-        <span id="coords-l93" class="monospace"></span>
-        <button id="btn-copy-l93" class="btn-icon" title="Copier Lambert 93">⎘</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

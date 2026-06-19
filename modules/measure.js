@@ -133,6 +133,7 @@ function _start() {
   _points = [];
   _preview = null;
   _map.getCanvas().style.cursor = 'crosshair';
+  _map.doubleClickZoom.disable();
   document.getElementById('btn-measure')?.classList.add('active');
   _showBar(true);
   _setHint('Cliquez pour mesurer');
@@ -144,10 +145,11 @@ function _start() {
 function _finish() {
   _active = false;
   _map.getCanvas().style.cursor = '';
+  _map.doubleClickZoom.enable();
   _map.off('click',    _onClick);
   _map.off('dblclick', _onDblClick);
   _map.off('mousemove', _onMove);
-  _map.getSource(SRC_PREV)?.setData(emptyFC('LineString'));
+  _map.getSource(SRC_PREV)?.setData({ type: 'FeatureCollection', features: [] });
 
   const d = totalDist(_points);
   const distStr = formatDist(d);
@@ -167,12 +169,14 @@ function _cancel() {
   _points = [];
   _preview = null;
   _map.getCanvas().style.cursor = '';
+  _map.doubleClickZoom.enable();
   _map.off('click',    _onClick);
   _map.off('dblclick', _onDblClick);
   _map.off('mousemove', _onMove);
-  _map.getSource(SRC_LINE)?.setData(emptyFC('LineString'));
-  _map.getSource(SRC_PTS)?.setData(emptyFC('Point'));
-  _map.getSource(SRC_PREV)?.setData(emptyFC('LineString'));
+  const empty = { type: 'FeatureCollection', features: [] };
+  _map.getSource(SRC_LINE)?.setData(empty);
+  _map.getSource(SRC_PTS)?.setData(empty);
+  _map.getSource(SRC_PREV)?.setData(empty);
   document.getElementById('btn-measure')?.classList.remove('active');
   document.getElementById('btn-measure-copy')?.classList.add('hidden');
   _showBar(false);

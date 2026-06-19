@@ -356,6 +356,63 @@ button:active { background: #1d2035; }
 #geocoder-input:focus { border-color: var(--accent); }
 #geocoder-input::placeholder { color: var(--text-dim); }
 
+#coords-display {
+  margin-top: 4px;
+  background: rgba(20, 23, 32, 0.88);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 8px;
+  backdrop-filter: blur(4px);
+}
+#coords-display .coords-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+#coords-display .coords-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  width: 68px;
+  flex-shrink: 0;
+}
+#coords-display .monospace {
+  flex: 1;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+#map-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 10;
+  width: 16px;
+  height: 16px;
+}
+#map-crosshair::before,
+#map-crosshair::after {
+  content: '';
+  position: absolute;
+  background: rgba(255, 255, 255, 0.8);
+}
+#map-crosshair::before {
+  width: 1px;
+  height: 100%;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+}
+#map-crosshair::after {
+  width: 100%;
+  height: 1px;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+}
+
 #geocoder-results {
   position: absolute;
   top: calc(100% + 4px);

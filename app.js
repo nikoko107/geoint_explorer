@@ -265,7 +265,7 @@ function tryInit() {
   initMeasure(mapAnalysis);
 
   // Popup coordonnées
-  initCoordsPopup(mapAnalysis);
+  initCoordsDisplay(mapAnalysis);
 
   // Séparateur et sync cartes
   initPaneDivider();
@@ -483,49 +483,28 @@ function _copyWithFeedback(btn, text) {
   setTimeout(() => { btn.textContent = orig; }, 1200);
 }
 
-function initCoordsPopup(map) {
-  const popup  = document.getElementById('coords-popup');
-  const btnOpen  = document.getElementById('btn-coords');
-  const btnClose = document.getElementById('btn-close-coords-popup');
-  const elWgs  = document.getElementById('coords-wgs84');
-  const elL93  = document.getElementById('coords-l93');
+function initCoordsDisplay(map) {
+  const elWgs = document.getElementById('coord-wgs84');
+  const elL93 = document.getElementById('coord-l93');
   const btnCopyWgs = document.getElementById('btn-copy-wgs84');
   const btnCopyL93 = document.getElementById('btn-copy-l93');
-  if (!popup || !btnOpen) return;
 
-  function openPopup() {
+  function updateCoords() {
     const c = map.getCenter();
     const lat = c.lat, lon = c.lng;
     const wgsStr = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
     const { x, y } = wgs84ToLambert93(lat, lon);
-    const l93Str = `${x.toFixed(1)} E, ${y.toFixed(1)} N`;
-    if (elWgs)  elWgs.textContent  = wgsStr;
-    if (elL93)  elL93.textContent  = l93Str;
-    if (btnCopyWgs) btnCopyWgs.dataset.val = wgsStr;
-    if (btnCopyL93) btnCopyL93.dataset.val = l93Str;
-    popup.classList.remove('hidden');
+    const l93Str = `${x.toFixed(0)} E  ${y.toFixed(0)} N`;
+    if (elWgs) { elWgs.textContent = wgsStr; elWgs.dataset.val = wgsStr; }
+    if (elL93) { elL93.textContent = l93Str; elL93.dataset.val = l93Str; }
   }
 
-  btnOpen.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (popup.classList.contains('hidden')) openPopup();
-    else popup.classList.add('hidden');
-  });
+  map.on('move', updateCoords);
+  map.on('load', updateCoords);
+  if (map.isStyleLoaded()) updateCoords();
 
-  btnClose?.addEventListener('click', () => popup.classList.add('hidden'));
-
-  btnCopyWgs?.addEventListener('click', (e) => {
-    _copyWithFeedback(e.currentTarget, e.currentTarget.dataset.val);
-  });
-  btnCopyL93?.addEventListener('click', (e) => {
-    _copyWithFeedback(e.currentTarget, e.currentTarget.dataset.val);
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!popup.classList.contains('hidden') && !popup.contains(e.target) && e.target !== btnOpen) {
-      popup.classList.add('hidden');
-    }
-  });
+  btnCopyWgs?.addEventListener('click', () => _copyWithFeedback(btnCopyWgs, elWgs?.dataset.val ?? ''));
+  btnCopyL93?.addEventListener('click', () => _copyWithFeedback(btnCopyL93, elL93?.dataset.val ?? ''));
 }
 
 // ── Géocodage ─────────────────────────────────────────────────────
