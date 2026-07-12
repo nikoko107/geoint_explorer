@@ -1,11 +1,13 @@
 import { initStorage }        from './modules/storage.js';
-import { initProjects, getActiveProject, saveActiveProject, getActiveId, createAndSwitchProject } from './modules/projects.js';
+import { initProjects, getActiveProject, saveActiveProject, getActiveId, createAndSwitchProject, listProjects, mergeProjectAndSwitch } from './modules/projects.js';
 import { initLayers, initLayersPanel, reloadLayers, getLayerConfig, resizeCompareMap } from './modules/layers.js';
 import { initTracker, reloadNavLog, resetNavLog } from './modules/tracker.js';
 import { initAnnotations, initAnnotationsPanel, initAnnotationsTracking, reloadAnnotations } from './modules/annotations.js';
 import { initTrackingZones, reloadZones }                from './modules/tracking-zones.js';
+import { initExternalLayers, reloadExternalLayers } from './modules/external-layers.js';
 import { initExport, exportProject, parseProjectImport } from './modules/export.js';
 import { initMeasure } from './modules/measure.js';
+import { initImageTool } from './modules/image-tool.js';
 import { initOverpass, initOverpassStandalone, openOverpassPanel, openOverpassStandalone } from './modules/overpass.js';
 
 // ── Cartes ────────────────────────────────────────────────────────
@@ -183,6 +185,9 @@ function onProjectSwitch(project) {
   // Recharger zones
   reloadZones(project.trackingZones || []);
 
+  // Recharger calques importés
+  reloadExternalLayers(project.importedLayers || []);
+
   // Recharger visites terrain
   reloadSvVisits(project.streetviewVisits || []);
 }
@@ -241,6 +246,7 @@ function tryInit() {
     initTrackingZones(mapTracking, mapAnalysis, project.trackingZones || [], {
       onOverpassRequest: openOverpassPanel,
     });
+    initExternalLayers(mapAnalysis, project.importedLayers || []);
   } else {
     initLayers(mapAnalysis, []);
     initTracker(mapAnalysis, mapTracking, []);
@@ -249,6 +255,7 @@ function tryInit() {
     initTrackingZones(mapTracking, mapAnalysis, [], {
       onOverpassRequest: openOverpassPanel,
     });
+    initExternalLayers(mapAnalysis, []);
   }
 
   // Panneau couches
@@ -283,6 +290,9 @@ function tryInit() {
 
   // Mesure linéaire
   initMeasure(mapAnalysis);
+
+  // Image de référence (zoom/rotation/mesure relative, hors carte)
+  initImageTool();
 
   // Popup coordonnées
   initCoordsDisplay(mapAnalysis);
@@ -343,14 +353,36 @@ document.getElementById('btn-export-project')?.addEventListener('click', exportP
   const importInput = document.getElementById('project-import-input');
   document.getElementById('btn-import-project')?.addEventListener('click', () => importInput?.click());
 
+  const choicePopup  = document.getElementById('project-import-choice-popup');
+  const modeNew      = document.getElementById('import-mode-new');
+  const modeMerge     = document.getElementById('import-mode-merge');
+  const mergeTarget   = document.getElementById('import-merge-target');
+  let   _pendingImport = null;
+
+  function _closeImportChoice() {
+    choicePopup?.classList.add('hidden');
+    _pendingImport = null;
+  }
+
   importInput?.addEventListener('change', e => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = evt => {
       try {
-        const data = parseProjectImport(evt.target.result);
-        createAndSwitchProject(data);
+        _pendingImport = parseProjectImport(evt.target.result);
+
+        const projects = listProjects();
+        mergeTarget.innerHTML = '';
+        for (const p of projects) {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = p.name;
+          mergeTarget.appendChild(opt);
+        }
+        modeNew.checked = true;
+        mergeTarget.disabled = true;
+        choicePopup?.classList.remove('hidden');
       } catch (err) {
         const banner = document.getElementById('quota-banner');
         const msg    = document.getElementById('quota-message');
@@ -362,6 +394,26 @@ document.getElementById('btn-export-project')?.addEventListener('click', exportP
       importInput.value = '';
     };
     reader.readAsText(file);
+  });
+
+  modeNew?.addEventListener('change', () => { mergeTarget.disabled = true; });
+  modeMerge?.addEventListener('change', () => { mergeTarget.disabled = false; });
+
+  document.getElementById('btn-confirm-import')?.addEventListener('click', () => {
+    if (!_pendingImport) return;
+    if (modeMerge.checked && mergeTarget.value) {
+      mergeProjectAndSwitch(mergeTarget.value, _pendingImport);
+    } else {
+      createAndSwitchProject(_pendingImport);
+    }
+    _closeImportChoice();
+  });
+
+  document.getElementById('btn-cancel-import')?.addEventListener('click', _closeImportChoice);
+  document.getElementById('btn-close-import-choice-popup')?.addEventListener('click', _closeImportChoice);
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !choicePopup?.classList.contains('hidden')) _closeImportChoice();
   });
 }
 
