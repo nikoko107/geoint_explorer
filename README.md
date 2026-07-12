@@ -31,7 +31,7 @@ python3 -m http.server 8080
 ├──────────────────────────┴──────────────────────────────────┤
 │ [Couches] [📌 Annoter] [≡ Annotations] [✏ Zone] [≡ Zones] [↺ Reset] │
 │ [🚶 Street View] [📷 Mapillary] [🌐 Panoramax] [☀ SunCalc] [W3W]    │
-│ [📏 Mesure] [🔍 Overpass]                                   │
+│ [📏 Mesure] [🔍 Overpass] [🖼 Image]                         │
 │ [↓ GeoJSON] [↓ CSV] [↓ Projet] [↑ Projet]                  │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -53,7 +53,7 @@ Un projet isole l'ensemble des données d'une mission : annotations, historique 
 | Changer | Dropdown de sélection |
 | Supprimer | Bouton 🗑 (confirmation requise) |
 | Exporter | Bouton **↓ Projet** — sauvegarde complète en JSON |
-| Importer | Bouton **↑ Projet** — crée un nouveau projet depuis un fichier JSON |
+| Importer | Bouton **↑ Projet** — depuis un fichier JSON, au choix : créer un **nouveau projet** ou **fusionner** dans un projet existant (annotations, navLog, zones, visites terrain et calques importés concaténés, sans écraser la config du projet cible) |
 
 Les données sont persistées dans le `localStorage` du navigateur sous les clés `geoint_project_{id}` et `geoint_index`.
 
@@ -81,6 +81,10 @@ Le panneau **Couches** permet de superposer plusieurs fonds de carte avec slider
 | Google Satellite | Imagerie satellitaire (**activée par défaut**) |
 | Google Hybride | Satellite + noms de rues |
 | Google Maps | Carte routière |
+
+### Calques externes (GeoJSON / KML)
+
+En bas du panneau **Couches**, le bouton **+ Importer un calque** permet de superposer un fichier `.geojson`/`.json` ou `.kml` sur la carte d'analyse (parsing KML fait maison, sans dépendance tierce). Le calque est fusionné directement dans le projet actif — pas de création de nouveau projet. Chaque calque importé dispose d'une pastille couleur modifiable, d'une case à cocher visibilité et d'un bouton de suppression.
 
 ---
 
@@ -190,6 +194,19 @@ Bouton **📏 Mesure** :
 
 ---
 
+## Image de référence
+
+Bouton **🖼 Image** — ouvre une fenêtre flottante indépendante de la carte (pas de géoréférencement) pour analyser une photo dont on cherche à estimer des distances ou tailles relatives :
+
+1. **Charger…** une image locale
+2. Zoomer (molette ou boutons **−/+**) et pivoter (slider ou boutons **↺/↻**) pour l'inspecter
+3. **Calibrer** l'échelle : cliquer 2 points dont la distance réelle est connue, puis saisir cette distance (m)
+4. **Mesurer** : cliquer pour poser des points, double-clic pour terminer — la distance s'affiche en direct puis peut être copiée
+
+La fenêtre n'est pas modale (la carte d'analyse reste utilisable en parallèle) et fermer (**✕**) ne réinitialise rien — l'image, le zoom/rotation et la calibration restent en mémoire pour un retour rapide. Rien n'est persisté en `localStorage` (une image peut peser plusieurs Mo) ; un rechargement de page ou un changement de projet réinitialise l'outil.
+
+---
+
 ## Vue terrain
 
 Ouvre la position courante dans un service externe (nouvel onglet).
@@ -217,8 +234,8 @@ Ouvre la position courante dans un service externe (nouvel onglet).
 
 | Bouton | Action |
 |---|---|
-| **↓ Projet** | Exporte en JSON : annotations, zones, navLog, config couches, dernière vue |
-| **↑ Projet** | Importe un `.json` — crée un **nouveau projet** sans écraser l'actif |
+| **↓ Projet** | Exporte en JSON : annotations, zones, navLog, visites terrain, calques importés, config couches, dernière vue |
+| **↑ Projet** | Importe un `.json` — au choix, crée un **nouveau projet** ou **fusionne** dans un projet existant |
 
 ---
 
@@ -248,7 +265,9 @@ geoint-explorer/
     ├── tracking-zones.js    — dessin polygone, statuts zones
     ├── overpass.js          — Overpass QL standalone + BD TOPO WFS IGN
     ├── measure.js           — mesure linéaire haversine
-    └── export.js            — GeoJSON, CSV, export/import projet JSON
+    ├── external-layers.js   — import calques GeoJSON/KML, fusion projet actif
+    ├── image-tool.js        — fenêtre image de référence, mesure relative
+    └── export.js            — GeoJSON, CSV, export/import (+ fusion) projet JSON
 ```
 
 **Stack** : MapLibre GL JS 4.7 (CDN) · HTML/CSS/JS vanilla · ES Modules natifs · localStorage

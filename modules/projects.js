@@ -51,6 +51,7 @@ function createProjectData(name) {
     navLog: [],
     trackingZones: [],
     streetviewVisits: [],
+    importedLayers: [],
   };
 }
 
@@ -140,10 +141,43 @@ export function createAndSwitchProject(data) {
     annotations:   data.annotations   || [],
     navLog:        data.navLog        || [],
     trackingZones: data.trackingZones || [],
+    importedLayers: data.importedLayers || [],
   };
   const index = storageGet(INDEX_KEY) || [];
   index.push(project.id);
   storageSet(INDEX_KEY, index);
   storageSet(`geoint_project_${project.id}`, project);
   _switchTo(project.id);
+}
+
+// ── Fusion d'un import dans un projet existant ─────────────────────
+
+export function listProjects() {
+  const index = storageGet(INDEX_KEY) || [];
+  return index
+    .map(id => storageGet(`geoint_project_${id}`))
+    .filter(Boolean)
+    .map(p => ({ id: p.id, name: p.name }));
+}
+
+export function mergeProjectAndSwitch(targetId, data) {
+  const target = storageGet(`geoint_project_${targetId}`);
+  if (!target) return;
+
+  const ts  = Date.now();
+  const rnd = Math.random().toString(36).slice(2, 8);
+  const _remapIds = (items, prefix) =>
+    (items || []).map((item, i) => ({ ...item, id: `${prefix}_${ts}_${rnd}_${i}` }));
+
+  const updated = {
+    ...target,
+    annotations:     [...(target.annotations     || []), ..._remapIds(data.annotations,     'merge_a')],
+    navLog:          [...(target.navLog          || []), ..._remapIds(data.navLog,          'merge_n')],
+    trackingZones:   [...(target.trackingZones   || []), ..._remapIds(data.trackingZones,   'merge_z')],
+    streetviewVisits:[...(target.streetviewVisits|| []), ..._remapIds(data.streetviewVisits,'merge_v')],
+    importedLayers:  [...(target.importedLayers  || []), ..._remapIds(data.importedLayers,  'merge_l')],
+  };
+
+  storageSet(`geoint_project_${targetId}`, updated);
+  _switchTo(targetId);
 }

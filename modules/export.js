@@ -65,10 +65,12 @@ export function exportProject() {
     name:          project.name,
     createdAt:     project.createdAt,
     lastView:      project.lastView      || null,
-    layerConfig:   project.layerConfig   || [],
-    annotations:   project.annotations   || [],
-    navLog:        project.navLog        || [],
-    trackingZones: project.trackingZones || [],
+    layerConfig:    project.layerConfig    || [],
+    annotations:    project.annotations    || [],
+    navLog:         project.navLog         || [],
+    trackingZones:  project.trackingZones  || [],
+    streetviewVisits: project.streetviewVisits || [],
+    importedLayers: project.importedLayers || [],
   };
 
   _download(
@@ -88,10 +90,12 @@ export function parseProjectImport(text) {
     name:          data.name,
     createdAt:     typeof data.createdAt === 'string' ? data.createdAt : new Date().toISOString(),
     lastView:      data.lastView || null,
-    layerConfig:   Array.isArray(data.layerConfig)   ? data.layerConfig   : [],
-    annotations:   Array.isArray(data.annotations)   ? data.annotations   : [],
-    navLog:        Array.isArray(data.navLog)         ? data.navLog        : [],
-    trackingZones: Array.isArray(data.trackingZones) ? data.trackingZones : [],
+    layerConfig:      Array.isArray(data.layerConfig)      ? data.layerConfig      : [],
+    annotations:      Array.isArray(data.annotations)      ? data.annotations      : [],
+    navLog:           Array.isArray(data.navLog)           ? data.navLog           : [],
+    trackingZones:    Array.isArray(data.trackingZones)    ? data.trackingZones    : [],
+    streetviewVisits: Array.isArray(data.streetviewVisits) ? data.streetviewVisits : [],
+    importedLayers:   Array.isArray(data.importedLayers)   ? data.importedLayers   : [],
   };
 }
 

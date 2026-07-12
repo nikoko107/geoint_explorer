@@ -198,6 +198,11 @@
       <div id="layers-panel" class="dropdown-panel hidden">
         <div class="layers-panel-header">Couches IGN</div>
         <div id="layers-list"></div>
+        <div id="external-layers-list"></div>
+        <div class="external-layer-import-row">
+          <button id="btn-import-layer" class="btn-secondary" title="Importer un calque GeoJSON ou KML">+ Importer un calque</button>
+          <input id="external-layer-input" type="file" accept=".geojson,.json,.kml" style="display:none" />
+        </div>
         <div id="layers-compare"></div>
       </div>
     </div>
@@ -228,6 +233,7 @@
     <div class="control-group">
       <button id="btn-measure" class="btn-control btn-tool" title="Mesure linéaire (cliquez pour tracer, double-clic pour terminer)">📏 Mesure</button>
       <button id="btn-overpass-standalone" class="btn-control btn-tool" title="Requête Overpass QL sur la vue courante">🔍 Overpass</button>
+      <button id="btn-image-tool" class="btn-control btn-tool" title="Image de référence (zoom, rotation, mesure relative)">🖼 Image</button>
     </div>
 
     <!-- Export -->
@@ -316,6 +322,29 @@
     </div>
   </div>
 
+  <!-- Popup choix import projet : nouveau / fusion -->
+  <div id="project-import-choice-popup" class="floating-popup hidden">
+    <div class="popup-header">
+      <span>Importer le projet</span>
+      <button id="btn-close-import-choice-popup" class="btn-icon">✕</button>
+    </div>
+    <div class="popup-body">
+      <label class="import-choice-row">
+        <input type="radio" name="import-mode" id="import-mode-new" value="new" checked />
+        Créer un nouveau projet
+      </label>
+      <label class="import-choice-row">
+        <input type="radio" name="import-mode" id="import-mode-merge" value="merge" />
+        Fusionner dans un projet existant
+      </label>
+      <select id="import-merge-target" disabled></select>
+    </div>
+    <div class="popup-footer">
+      <button id="btn-confirm-import" class="btn-primary">Importer</button>
+      <button id="btn-cancel-import" class="btn-secondary">Annuler</button>
+    </div>
+  </div>
+
   <!-- Popup confirmation reset navlog -->
   <div id="reset-navlog-popup" class="floating-popup hidden">
     <div class="popup-header">
@@ -347,6 +376,37 @@
     <button id="btn-measure-copy"   class="btn-secondary hidden" title="Copier la distance">⎘</button>
     <button id="btn-measure-undo"   class="btn-secondary">↩ Annuler dernier</button>
     <button id="btn-measure-cancel" class="btn-danger">✕ Annuler</button>
+  </div>
+
+  <!-- Fenêtre Image de référence (non-modale, état conservé à la fermeture) -->
+  <div id="image-tool-window" class="image-tool-window hidden">
+    <div class="image-tool-header">
+      <span>🖼 Image de référence</span>
+      <button id="btn-close-image-tool" class="btn-icon">✕</button>
+    </div>
+    <div class="image-tool-toolbar">
+      <button id="btn-img-load" class="btn-secondary">Charger…</button>
+      <input id="image-tool-input" type="file" accept="image/*" style="display:none" />
+      <span class="image-tool-sep"></span>
+      <button id="btn-img-zoom-out" class="btn-icon" title="Zoom arrière">−</button>
+      <button id="btn-img-zoom-in"  class="btn-icon" title="Zoom avant">+</button>
+      <input id="img-rotation-slider" type="range" min="-180" max="180" value="0" title="Rotation" />
+      <button id="btn-img-rotate-l" class="btn-icon" title="Pivoter -90°">↺</button>
+      <button id="btn-img-rotate-r" class="btn-icon" title="Pivoter +90°">↻</button>
+      <button id="btn-img-reset-view" class="btn-secondary">Réinitialiser</button>
+      <span class="image-tool-sep"></span>
+      <button id="btn-img-calibrate" class="btn-tool" title="Calibrer l'échelle (cliquez 2 points, puis saisissez la distance réelle)">Calibrer</button>
+      <button id="btn-img-measure" class="btn-tool" disabled title="Mesurer une distance relative (clic = point, double-clic = terminer)">Mesurer</button>
+    </div>
+    <div class="image-tool-canvas-wrap">
+      <canvas id="image-tool-canvas"></canvas>
+      <div id="image-tool-empty" class="image-tool-empty">Charger une image pour commencer…</div>
+    </div>
+    <div class="image-tool-footer">
+      <span id="image-tool-hint" class="poly-draw-hint">Aucune image chargée</span>
+      <button id="btn-img-measure-copy" class="btn-icon hidden" title="Copier la distance">⎘</button>
+      <span id="image-tool-scale" class="monospace"></span>
+    </div>
   </div>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
