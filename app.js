@@ -6,6 +6,7 @@ import { initAnnotations, initAnnotationsPanel, initAnnotationsTracking, reloadA
 import { initTrackingZones, reloadZones }                from './modules/tracking-zones.js';
 import { initExport, exportProject, parseProjectImport } from './modules/export.js';
 import { initMeasure } from './modules/measure.js';
+import { initOverpass, initOverpassStandalone, openOverpassPanel, openOverpassStandalone } from './modules/overpass.js';
 
 // ── Cartes ────────────────────────────────────────────────────────
 
@@ -237,13 +238,17 @@ function tryInit() {
     initTracker(mapAnalysis, mapTracking, project.navLog || []);
     initAnnotations(mapAnalysis, project.annotations || []);
     initAnnotationsTracking(mapTracking);
-    initTrackingZones(mapTracking, mapAnalysis, project.trackingZones || []);
+    initTrackingZones(mapTracking, mapAnalysis, project.trackingZones || [], {
+      onOverpassRequest: openOverpassPanel,
+    });
   } else {
     initLayers(mapAnalysis, []);
     initTracker(mapAnalysis, mapTracking, []);
     initAnnotations(mapAnalysis, []);
     initAnnotationsTracking(mapTracking);
-    initTrackingZones(mapTracking, mapAnalysis, []);
+    initTrackingZones(mapTracking, mapAnalysis, [], {
+      onOverpassRequest: openOverpassPanel,
+    });
   }
 
   // Panneau couches
@@ -251,6 +256,21 @@ function tryInit() {
 
   // Panneau annotations
   initAnnotationsPanel();
+
+  // Overpass
+  initOverpass({
+    onImportDone: count => {
+      const banner = document.getElementById('quota-banner');
+      const msg    = document.getElementById('quota-message');
+      if (banner && msg) {
+        msg.textContent = `${count} annotation${count > 1 ? 's' : ''} importée${count > 1 ? 's' : ''} dans le projet.`;
+        banner.classList.remove('hidden');
+        setTimeout(() => banner.classList.add('hidden'), 4000);
+      }
+    },
+  });
+  initOverpassStandalone();
+  document.getElementById('btn-overpass-standalone')?.addEventListener('click', openOverpassStandalone);
 
   // Export
   initExport();
@@ -383,7 +403,7 @@ function initSvVisits(trackingMap, visits) {
     const d = new Date(p.timestamp);
     const time = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
     const labels = { streetview: 'Google Street View', mapillary: 'Mapillary', panoramax: 'Panoramax' };
-    popup.setLngLat(e.lngLat).setHTML(`${time} — ${labels[p.service] || p.service}`).addTo(trackingMap);
+    popup.setLngLat(e.lngLat).setText(`${time} — ${labels[p.service] || p.service}`).addTo(trackingMap);
   });
   trackingMap.on('mouseleave', SV_LAYER, () => {
     trackingMap.getCanvas().style.cursor = '';
@@ -448,6 +468,65 @@ function initTerrainButtons(map) {
     const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
     window.open(`https://www.suncalc.org/#/${lat.toFixed(4)},${lon.toFixed(4)},${zoom}/${date}/${time}/1/3`, '_blank', 'noopener,noreferrer');
   });
+
+  document.getElementById('btn-w3w')?.addEventListener('click', () => {
+    const { lat, lon } = center();
+    window.open(`https://what3words.com/?q=${lat.toFixed(6)},${lon.toFixed(6)}`, '_blank', 'noopener,noreferrer');
+  });
+}
+
+// ── Plus Code (Open Location Code) — algo inline ─────────────────
+
+const _OLC_CHARS = '23456789CFGHJMPQRVWX';
+
+function _encodePlusCode(latDeg, lonDeg) {
+  const lat = Math.min(90 - 1e-9, Math.max(-90, latDeg)) + 90;  // [0, 180)
+  const lon = (((lonDeg % 360) + 540) % 360);                    // [0, 360)
+
+  let code = '';
+  const PAIR_RES = [20, 1, 0.05, 0.0025];
+  for (let i = 0; i < 4; i++) {
+    code += _OLC_CHARS[Math.floor(lat / PAIR_RES[i]) % 20];
+    code += _OLC_CHARS[Math.floor(lon / PAIR_RES[i]) % 20];
+  }
+  // Grid char 1 : 5 lat-rows × 4 lon-cols
+  const lat0 = lat % 0.0025, lon0 = lon % 0.0025;
+  code += _OLC_CHARS[Math.min(4, Math.floor(lat0 / 0.0005)) * 4 + Math.min(3, Math.floor(lon0 / 0.000625))];
+  // Grid char 2 : 4 lat-rows × 5 lon-cols (alternated)
+  code += _OLC_CHARS[Math.min(3, Math.floor((lat0 % 0.0005) / 0.000125)) * 5 + Math.min(4, Math.floor((lon0 % 0.000625) / 0.000125))];
+
+  return code.slice(0, 8) + '+' + code.slice(8);
+}
+
+function _decodePlusCode(code) {
+  const clean = code.toUpperCase().replace(/\+/, '');
+  const PAIR_RES = [20, 1, 0.05, 0.0025];
+  let lat = 0, lon = 0;
+  const pairs = Math.min(4, Math.floor(clean.length / 2));
+  for (let i = 0; i < pairs; i++) {
+    const li = _OLC_CHARS.indexOf(clean[i * 2]);
+    const oi = _OLC_CHARS.indexOf(clean[i * 2 + 1]);
+    if (li < 0 || oi < 0) return null;
+    lat += li * PAIR_RES[i];
+    lon += oi * PAIR_RES[i];
+  }
+  if (clean.length >= 9) {
+    const g = _OLC_CHARS.indexOf(clean[8]);
+    if (g >= 0) { lat += Math.floor(g / 4) * 0.0005; lon += (g % 4) * 0.000625; }
+  }
+  if (clean.length >= 10) {
+    const g = _OLC_CHARS.indexOf(clean[9]);
+    if (g >= 0) { lat += Math.floor(g / 5) * 0.000125; lon += (g % 5) * 0.000125; }
+  }
+  const latRes = clean.length >= 10 ? 0.000125 : clean.length >= 9 ? 0.0005 : PAIR_RES[Math.max(0, pairs - 1)];
+  const lonRes = clean.length >= 10 ? 0.000125 : clean.length >= 9 ? 0.000625 : PAIR_RES[Math.max(0, pairs - 1)];
+  return { lat: lat - 90 + latRes / 2, lon: lon - 180 + lonRes / 2 };
+}
+
+// ── Plus Code ─────────────────────────────────────────────────────
+
+function _isPlusCode(s) {
+  return /^[23456789CFGHJMPQRVWX]{4,8}\+[23456789CFGHJMPQRVWX]{0,8}$/i.test(s.replace(/\s/g, ''));
 }
 
 // ── Coordonnées centre carte (WGS84 + Lambert 93) ─────────────────
@@ -484,19 +563,23 @@ function _copyWithFeedback(btn, text) {
 }
 
 function initCoordsDisplay(map) {
-  const elWgs = document.getElementById('coord-wgs84');
-  const elL93 = document.getElementById('coord-l93');
+  const elWgs      = document.getElementById('coord-wgs84');
+  const elL93      = document.getElementById('coord-l93');
+  const elPC       = document.getElementById('coord-pluscode');
   const btnCopyWgs = document.getElementById('btn-copy-wgs84');
   const btnCopyL93 = document.getElementById('btn-copy-l93');
+  const btnCopyPC  = document.getElementById('btn-copy-pluscode');
 
   function updateCoords() {
-    const c = map.getCenter();
+    const c   = map.getCenter();
     const lat = c.lat, lon = c.lng;
     const wgsStr = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
     const { x, y } = wgs84ToLambert93(lat, lon);
     const l93Str = `${x.toFixed(0)} E  ${y.toFixed(0)} N`;
+    const pcStr  = _encodePlusCode(lat, lon);
     if (elWgs) { elWgs.textContent = wgsStr; elWgs.dataset.val = wgsStr; }
     if (elL93) { elL93.textContent = l93Str; elL93.dataset.val = l93Str; }
+    if (elPC)  { elPC.textContent  = pcStr;  elPC.dataset.val  = pcStr;  }
   }
 
   map.on('move', updateCoords);
@@ -505,6 +588,7 @@ function initCoordsDisplay(map) {
 
   btnCopyWgs?.addEventListener('click', () => _copyWithFeedback(btnCopyWgs, elWgs?.dataset.val ?? ''));
   btnCopyL93?.addEventListener('click', () => _copyWithFeedback(btnCopyL93, elL93?.dataset.val ?? ''));
+  btnCopyPC?.addEventListener('click',  () => _copyWithFeedback(btnCopyPC,  elPC?.dataset.val  ?? ''));
 }
 
 // ── Géocodage ─────────────────────────────────────────────────────
@@ -552,7 +636,7 @@ function initGeocoder(map) {
       }
     }
 
-    debounceTimer = setTimeout(() => fetchAddress(q, map, input, results), 300);
+    debounceTimer = setTimeout(() => _geocoderSearch(q, map, input, results), 300);
   });
 
   input.addEventListener('keydown', e => {
@@ -570,6 +654,40 @@ function initGeocoder(map) {
       results.innerHTML = '';
     }
   });
+}
+
+async function _geocoderSearch(q, map, input, results) {
+  // Plus Code
+  const pcClean = q.replace(/\s/g, '').toUpperCase();
+  if (_isPlusCode(pcClean)) {
+    try {
+      const dec = _decodePlusCode(pcClean);
+      if (!dec) throw new Error('invalid');
+      const lat = dec.lat;
+      const lon = dec.lon;
+      _appendGeocoderItem(results, pcClean, 'Plus Code', () => {
+        map.flyTo({ center: [lon, lat], zoom: 17 });
+        results.innerHTML = '';
+        input.value = pcClean;
+      });
+      return;
+    } catch { /* format invalide, passe à l'adresse */ }
+  }
+
+  await fetchAddress(q, map, input, results);
+}
+
+function _appendGeocoderItem(results, main, sub, onClick) {
+  const li = document.createElement('li');
+  const mainDiv = document.createElement('div');
+  mainDiv.className = 'result-main';
+  mainDiv.textContent = main;
+  const subDiv = document.createElement('div');
+  subDiv.className = 'result-sub';
+  subDiv.textContent = sub;
+  li.append(mainDiv, subDiv);
+  li.addEventListener('click', onClick);
+  results.appendChild(li);
 }
 
 async function fetchAddress(q, map, input, results) {

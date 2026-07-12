@@ -27,12 +27,15 @@ let _polyPoints = [];   // [{lng, lat}]
 let _onPolyClick = null;
 let _onPolyMove  = null;
 
+let _onOverpassRequest = null;
+
 // ── Init ──────────────────────────────────────────────────────────
 
-export function initTrackingZones(mapTracking, mapAnalysis, initialZones) {
-  _map         = mapTracking;
-  _mapAnalysis = mapAnalysis;
-  _zones       = initialZones || [];
+export function initTrackingZones(mapTracking, mapAnalysis, initialZones, callbacks = {}) {
+  _map               = mapTracking;
+  _mapAnalysis       = mapAnalysis;
+  _zones             = initialZones || [];
+  _onOverpassRequest = callbacks.onOverpassRequest || null;
 
   _initZoneSource();
   _initZoneAnalysisLayer();
@@ -338,6 +341,7 @@ function _openNewZonePopup(geomData) {
   document.getElementById('btn-toggle-zone-status').classList.add('hidden');
   document.getElementById('btn-delete-zone').classList.add('hidden');
   document.getElementById('btn-save-zone').classList.remove('hidden');
+  document.getElementById('btn-zone-overpass')?.classList.add('hidden');
 
   popup.classList.remove('hidden');
   document.getElementById('zone-name').focus();
@@ -369,6 +373,12 @@ function _showZonePopup(id) {
   btnToggle.classList.remove('hidden');
   document.getElementById('btn-delete-zone').classList.remove('hidden');
   document.getElementById('btn-save-zone').classList.remove('hidden');
+
+  const btnOverpass = document.getElementById('btn-zone-overpass');
+  if (btnOverpass) {
+    const hasBbox = Array.isArray(zone.bbox) && zone.bbox.length === 4;
+    btnOverpass.classList.toggle('hidden', !hasBbox || !_onOverpassRequest);
+  }
 
   document.getElementById('zone-popup').classList.remove('hidden');
   document.getElementById('zone-name').focus();
@@ -521,6 +531,13 @@ function _wireUI() {
   document.getElementById('btn-toggle-zone-status')?.addEventListener('click', _toggleZoneStatus);
   document.getElementById('btn-cancel-zone')?.addEventListener('click', _closeZonePopup);
   document.getElementById('btn-close-zone-popup')?.addEventListener('click', _closeZonePopup);
+  document.getElementById('btn-zone-overpass')?.addEventListener('click', () => {
+    if (!_editingZoneId || !_onOverpassRequest) return;
+    const zone = _zones.find(z => z.id === _editingZoneId);
+    if (!zone) return;
+    _closeZonePopup();
+    _onOverpassRequest(zone);
+  });
   document.getElementById('zone-name')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') _saveZone();
   });

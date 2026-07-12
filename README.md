@@ -17,12 +17,9 @@ python3 -m http.server 8080
 
 ## Interface
 
-<img width="1434" height="749" alt="Capture d’écran 2026-05-07 à 18 03 08" src="https://github.com/user-attachments/assets/ffbd23cd-022e-4ee3-b1eb-6f13fdcf50aa" />
+<img width="1434" height="749" alt="Capture d'écran 2026-05-07 à 18 03 08" src="https://github.com/user-attachments/assets/ffbd23cd-022e-4ee3-b1eb-6f13fdcf50aa" />
 
 ```
-
-
-
 ┌─────────────────────────────────────────────────────────────┐
 │  PROJET : [Projet actif ▼]  [+ Nouveau]  [🗑]               │
 ├──────────────────────────┬──────────────────────────────────┤
@@ -33,15 +30,16 @@ python3 -m http.server 8080
 │  ← séparateur draggable →│                                  │
 ├──────────────────────────┴──────────────────────────────────┤
 │ [Couches] [📌 Annoter] [≡ Annotations] [✏ Zone] [≡ Zones] [↺ Reset] │
-│ [🚶 Street View] [📷 Mapillary] [🌐 Panoramax]              │
+│ [🚶 Street View] [📷 Mapillary] [🌐 Panoramax] [☀ SunCalc] [W3W]    │
+│ [📏 Mesure] [🔍 Overpass]                                   │
 │ [↓ GeoJSON] [↓ CSV] [↓ Projet] [↑ Projet]                  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-- **Carte d'analyse** (gauche) — navigation libre, couches IGN/Google, annotations, rectangle de capture. Le champ de recherche est positionné en overlay **haut-gauche** de cette carte.
-- **Carte de suivi** (droite) — fond sombre Carto avec **labels villes/routes/rues** lisibles au-dessus des couches de suivi, historique de couverture, zones à traiter/traitées. Les contours des zones y tracées sont également visibles sur la carte d'analyse (rouge = à traiter, vert = traité).
-- **Séparateur** — draggable pour redimensionner les deux volets ; double-clic pour revenir au 50/50
-- La carte de suivi reste **centrée sur la carte d'analyse** en permanence
+- **Carte d'analyse** (gauche) — navigation libre, couches IGN/Google, annotations, rectangle de capture. Overlay haut-gauche avec recherche et coordonnées (WGS84, Lambert 93, Plus Code).
+- **Carte de suivi** (droite) — fond sombre Carto avec labels villes/routes/rues au-dessus des couches de suivi, historique de couverture, zones à traiter/traitées.
+- **Séparateur** — draggable pour redimensionner les deux volets ; double-clic pour revenir au 50/50.
+- La carte de suivi reste **centrée sur la carte d'analyse** en permanence.
 
 ---
 
@@ -63,18 +61,18 @@ Les données sont persistées dans le `localStorage` du navigateur sous les clé
 
 ## Couches cartographiques
 
-Le panneau **Couches** (barre du bas) permet de superposer plusieurs fonds de carte.
+Le panneau **Couches** permet de superposer plusieurs fonds de carte avec slider d'opacité et contrôle d'ordre.
 
 ### IGN Géoplateforme
 
-| Couche | Zoom utile | Note |
-|---|---|---|
-| Plan IGN | 6 – 18 | |
-| Ortho HR | 6 – 21 | Orthophotos standard |
-| Ortho 20cm | 16 – 21 | Haute résolution |
-| PCRS Image | 18 – 21 | Niveau rue / réseau |
-| Cadastre | 13 – 20 | Parcelles |
-| Routes | 6 – 18 | Réseau routier |
+| Couche | Zoom utile |
+|---|---|
+| Plan IGN | 6 – 18 |
+| Ortho HR | 6 – 21 |
+| Ortho 20cm | 16 – 21 |
+| PCRS Image | 18 – 21 |
+| Cadastre | 13 – 20 |
+| Routes | 6 – 18 |
 
 ### Google
 
@@ -84,17 +82,31 @@ Le panneau **Couches** (barre du bas) permet de superposer plusieurs fonds de ca
 | Google Hybride | Satellite + noms de rues |
 | Google Maps | Carte routière |
 
-Chaque couche dispose d'un **slider d'opacité** (0–100 %) et de boutons d'ordre de superposition. L'état est sauvegardé dans le projet.
-
 ---
 
 ## Recherche et navigation
 
-Le champ de recherche se trouve en **overlay haut-gauche** de la carte d'analyse.
+Le champ de recherche (overlay haut-gauche) reconnaît trois formats :
 
-- **Adresse** — saisie libre avec autocomplétion ([api-adresse.data.gouv.fr](https://api-adresse.data.gouv.fr)) ; les résultats s'ouvrent vers le bas, une erreur réseau est signalée
-- **Coordonnées** — saisir `lat, lon` ou `lat lon` en WGS84 décimal (ex : `48.8534, 2.3488`) ; les bornes ±90 / ±180 sont validées
-- La sélection centre la carte d'analyse au zoom 17
+- **Adresse** — autocomplétion via [api-adresse.data.gouv.fr](https://api-adresse.data.gouv.fr)
+- **Coordonnées WGS84** — `lat, lon` décimal (ex : `48.8534, 2.3488`)
+- **Plus Code** — code OLC complet (ex : `8FW4V83X+8Q`) — décodage client-side, sans réseau
+
+La sélection centre la carte d'analyse au zoom 17.
+
+---
+
+## Coordonnées du centre
+
+L'overlay haut-gauche affiche en permanence les coordonnées du centre de la carte en trois systèmes :
+
+| Système | Exemple |
+|---|---|
+| WGS84 | `48.853400, 2.348800` |
+| Lambert 93 (EPSG:2154) | `652184 E  6861122 N` |
+| Plus Code (OLC) | `8FW4V83X+8Q` |
+
+Chaque valeur dispose d'un bouton **⎘ copier**. Le Plus Code est calculé localement (algorithme OLC intégré, sans CDN externe).
 
 ---
 
@@ -103,8 +115,8 @@ Le champ de recherche se trouve en **overlay haut-gauche** de la carte d'analyse
 1. Cliquer **📌 Annoter** pour activer le mode (curseur en croix, bouton violet)
 2. Cliquer sur la carte pour placer un marqueur
 3. Remplir le label et la catégorie dans la popup, puis **Enregistrer**
-4. En mode normal, cliquer sur un marqueur pour le consulter, modifier ou supprimer
-5. Bouton **≡ Annotations** pour afficher le panneau liste avec recherche et filtre
+4. En mode normal, cliquer sur un marqueur pour consulter, modifier ou supprimer
+5. Bouton **≡ Annotations** pour le panneau liste avec recherche et filtre par catégorie
 
 **Catégories prédéfinies** : `Info` · `Alerte` · `Traité` · `À vérifier` (saisie libre également)
 
@@ -114,11 +126,7 @@ Le champ de recherche se trouve en **overlay haut-gauche** de la carte d'analyse
 
 ## Journal de navigation (tracker)
 
-Le rectangle de capture affiché en pointillés sur la carte d'analyse matérialise la zone qui sera enregistrée dans l'historique.
-
-L'enregistrement se déclenche automatiquement sur chaque déplacement **si** :
-- zoom ≥ 14
-- la zone ne chevauche pas à plus de 80 % la dernière entrée
+Le rectangle de capture en pointillés sur la carte d'analyse matérialise la zone enregistrée à chaque déplacement (si zoom ≥ 14 et chevauchement < 80 % avec la dernière entrée).
 
 ### Niveaux de couverture
 
@@ -128,72 +136,89 @@ L'enregistrement se déclenche automatiquement sur chaque déplacement **si** :
 | Inspection | 17 – 19 | Orange |
 | Analyse détaillée | 20+ | Bleu vif |
 
-Les rectangles s'affichent sur la carte de suivi. Si une zone est repassée à un zoom plus faible, la couleur du **niveau le plus élevé** historique est conservée.
+Les rectangles s'affichent sur la carte de suivi. La couleur du niveau le plus élevé historique est toujours conservée.
 
-Le bouton **↺ Reset** (groupe Zones) vide l'intégralité de l'historique de navigation du projet actif après confirmation. Les annotations et zones manuelles sont conservées.
+Le bouton **↺ Reset** vide l'historique de navigation et les visites terrain du projet actif (annotations et zones manuelles conservées).
 
 ---
 
 ## Zones de suivi
 
-Délimiter des zones géographiques sur la **carte de suivi** et suivre leur état d'avancement.
+Délimiter des zones géographiques sur la **carte de suivi** et suivre leur avancement.
 
-### Dessiner une zone
-
-Bouton **✏ Zone** dans la barre de contrôle — active le mode dessin de polygone sur la carte de suivi.
-
-Cliquer pour poser les sommets, une barre flottante apparaît :
-- **✓ Terminer** — valide le polygone (minimum 3 points)
-- **↩ Annuler dernier** — supprime le dernier sommet
-- **✕ Annuler** — abandonne le tracé
-- Échap annule également
-
-La prévisualisation (contour vert en pointillés, remplissage, sommets) se met à jour en temps réel pendant le tracé.
+Bouton **✏ Zone** → mode dessin polygone (clic pour poser les sommets, barre flottante pour terminer / annuler dernier / abandonner).
 
 ### Statuts
 
-| Statut | Couleur | Signification |
-|---|---|---|
-| À traiter | Rouge | Zone identifiée, pas encore analysée |
-| Traité | Vert | Zone analysée |
+| Statut | Couleur |
+|---|---|
+| À traiter | Rouge |
+| Traité | Vert |
 
-Cliquer sur une zone affiche sa popup : renommer, changer de statut, supprimer. Pour les zones "Traitées", le niveau de couverture maximal atteint (calculé depuis le navLog) est affiché.
+Cliquer sur une zone ouvre sa popup : renommer, changer de statut, supprimer, lancer une requête BD TOPO. Pour les zones traitées, le niveau de couverture maximal atteint (depuis le navLog) est affiché.
 
-Cliquer sur une zone dans le panneau **≡ Zones** recentre la carte d'analyse sur cette zone.
+Les contours des zones sont **également visibles sur la carte d'analyse** (avec halo blanc pour la lisibilité sur fond satellite).
 
-Les contours des zones sont **également affichés sur la carte d'analyse** (rouge = à traiter, vert = traité, avec halo blanc pour la lisibilité sur fond satellite), en dessous des markers d'annotations.
+---
+
+## Requêtes BD TOPO / Overpass
+
+### BD TOPO ZAI (depuis une zone)
+
+Depuis la popup d'une zone, le bouton **🗺 BD TOPO ZAI** interroge la [BD TOPO IGN WFS](https://data.geopf.fr/wfs/ows) dans la bbox de la zone. Les objets retournés (zones d'activité, équipements de transport, voirie structurante…) peuvent être importés comme annotations avec catégorie et couleur.
+
+### Overpass QL (standalone)
+
+Bouton **🔍 Overpass** — ouvre un panneau de requête libre Overpass QL (OSM) :
+
+- Écrire la requête dans le textarea (endpoint `overpass-api.de`, timeout 45 s, 500 résultats max)
+- Cliquer **Lancer** — les résultats s'affichent avec cases à cocher
+- Choisir la catégorie et la couleur, puis **Importer la sélection**
+- Compatible `out center;`, `out geom;`, `out body;`
+
+---
+
+## Mesure linéaire
+
+Bouton **📏 Mesure** :
+
+- **Clic** : ajoute un point — **Double-clic** : termine le tracé
+- Distance calculée en haversine (m ou km)
+- Prévisualisation en temps réel (ligne rouge + pointillés jaunes jusqu'au curseur)
+- Barre flottante avec la distance totale et bouton **⎘ copier**
+- Échap ou re-clic du bouton annule la mesure
 
 ---
 
 ## Vue terrain
 
-Ouvre la position courante de la carte d'analyse dans un service de photographies street-level :
+Ouvre la position courante dans un service externe (nouvel onglet).
 
-| Bouton | Service |
-|---|---|
-| 🚶 Street View | Google Maps (nouvel onglet) |
-| 📷 Mapillary | Mapillary (nouvel onglet) |
-| 🌐 Panoramax | panoramax.ign.fr (nouvel onglet) |
+| Bouton | Service | Visite enregistrée |
+|---|---|---|
+| 🚶 Street View | Google Maps | ✅ point bleu sur carte suivi |
+| 📷 Mapillary | Mapillary | ✅ point vert sur carte suivi |
+| 🌐 Panoramax | panoramax.ign.fr | ✅ point orange sur carte suivi |
+| ☀ SunCalc | suncalc.org (date/heure courante) | — |
+| W3W | what3words.com (position courante) | — |
 
 ---
 
 ## Export / Import
 
-### Annotations uniquement
+### Annotations
 
 | Bouton | Format | Contenu |
 |---|---|---|
 | **↓ GeoJSON** | `.geojson` | `FeatureCollection` de Points — `label`, `category`, `createdAt` |
-| **↓ CSV** | `.csv` | colonnes `id`, `lat`, `lon`, `label`, `category`, `createdAt` |
+| **↓ CSV** | `.csv` | `id`, `lat`, `lon`, `label`, `category`, `createdAt` |
 
 ### Projet complet
 
 | Bouton | Action |
 |---|---|
-| **↓ Projet** | Exporte le projet actif en JSON : annotations, zones manuelles, historique de navigation, configuration des couches, dernière vue |
-| **↑ Projet** | Importe un fichier `.json` produit par **↓ Projet** — crée un **nouveau projet** (le projet actif n'est pas écrasé) et bascule automatiquement vers lui |
-
-Le fichier d'export contient un champ `geoint_export_version` qui permet de valider le format à l'import. En cas de fichier invalide, un message d'erreur s'affiche dans le bandeau en haut de l'interface.
+| **↓ Projet** | Exporte en JSON : annotations, zones, navLog, config couches, dernière vue |
+| **↑ Projet** | Importe un `.json` — crée un **nouveau projet** sans écraser l'actif |
 
 ---
 
@@ -201,8 +226,8 @@ Le fichier d'export contient un champ `geoint_export_version` qui permet de vali
 
 | Touche | Action |
 |---|---|
-| `Échap` | Quitte le mode annotation, dessin de zone ou ferme les popups |
-| `Entrée` | Valide la popup active (annotation, zone) |
+| `Échap` | Quitte le mode annotation / dessin / mesure, ferme les popups |
+| `Entrée` | Valide la popup active |
 
 ---
 
@@ -212,34 +237,36 @@ Le fichier d'export contient un champ `geoint_export_version` qui permet de vali
 geoint-explorer/
 ├── index.html               — structure, popups, panneaux
 ├── style.css                — thème sombre, layout, composants
-├── app.js                   — point d'entrée, init cartes, géocodage
+├── app.js                   — init cartes, géocodage, coordonnées
+│                              (WGS84 / Lambert 93 / Plus Code inline OLC)
 └── modules/
     ├── storage.js           — abstraction localStorage, gestion quota
     ├── projects.js          — CRUD projets, switch, isolation données
     ├── layers.js            — couches IGN/Google, sélecteur, opacité
     ├── tracker.js           — navLog automatique, niveaux de couverture
-    ├── annotations.js       — marqueurs, popups, liste, filtre
+    ├── annotations.js       — marqueurs, popups, liste, filtre, import batch
     ├── tracking-zones.js    — dessin polygone, statuts zones
+    ├── overpass.js          — Overpass QL standalone + BD TOPO WFS IGN
+    ├── measure.js           — mesure linéaire haversine
     └── export.js            — GeoJSON, CSV, export/import projet JSON
 ```
 
 **Stack** : MapLibre GL JS 4.7 (CDN) · HTML/CSS/JS vanilla · ES Modules natifs · localStorage
 
-Aucune dépendance serveur. Compatible Chrome, Firefox, Edge modernes.
+Aucune dépendance serveur. Aucune clé API requise. Compatible Chrome, Firefox, Edge modernes.
 
-**Fonds de carte utilisés**
+**APIs externes utilisées (CORS ouvert, sans authentification)**
 
-| Carte | Source |
+| Service | Usage |
 |---|---|
-| Analyse — fond de référence | OpenStreetMap (opacité 15 %) |
-| Analyse — couches sélectionnables | IGN Géoplateforme WMTS + Google XYZ |
-| Suivi — fond sombre | CARTO `dark_nolabels` |
-| Suivi — labels villes/routes/rues | CARTO `dark_only_labels` (layer au-dessus de tout) |
+| [api-adresse.data.gouv.fr](https://api-adresse.data.gouv.fr) | Géocodage adresses France |
+| [data.geopf.fr](https://data.geopf.fr) WMTS | Couches IGN raster |
+| [data.geopf.fr](https://data.geopf.fr) WFS | BD TOPO ZAI |
+| [overpass-api.de](https://overpass-api.de) | Requêtes OSM libres |
+| [mt1.google.com](https://mt1.google.com) | Tuiles Google XYZ |
 
 ---
 
 ## Gestion du stockage
 
-En cas de quota `localStorage` presque atteint, un bandeau d'avertissement apparaît et les entrées de navigation les plus anciennes sont supprimées automatiquement (FIFO, 20 entrées à la fois).
-
-Si le quota est dépassé malgré le nettoyage : exporter les données et supprimer un projet pour libérer de l'espace.
+En cas de quota `localStorage` presque atteint, un bandeau d'avertissement apparaît et les entrées de navigation les plus anciennes sont supprimées automatiquement (FIFO, 20 entrées à la fois). Si le quota est dépassé malgré le nettoyage : exporter les données et supprimer un projet pour libérer de l'espace.

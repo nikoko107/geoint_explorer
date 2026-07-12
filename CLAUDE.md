@@ -55,15 +55,17 @@ Tous les fichiers JS utilisent `type="module"`. GitHub Pages sert correctement l
 geoint-explorer/
 ├── index.html
 ├── style.css
-├── app.js                  ← point d'entrée, init carte et modules
+├── app.js                  ← point d'entrée, init cartes, géocodage, séparateur
 ├── modules/
-│   ├── projects.js         ← gestion des projets (création, switch, suppression)
-│   ├── layers.js           ← couches IGN, sélecteur, opacité
-│   ├── annotations.js      ← annotations (mode, popup, markers, filtre)
-│   ├── tracker.js          ← journal de navigation automatique
-│   ├── tracking-zones.js   ← zones manuelles à traiter / traitées
 │   ├── storage.js          ← abstraction localStorage avec gestion quota
-│   └── export.js           ← export GeoJSON / CSV
+│   ├── projects.js         ← gestion des projets (création, switch, suppression, import/export)
+│   ├── layers.js           ← couches IGN + Google, sélecteur, opacité, mode comparaison
+│   ├── tracker.js          ← journal de navigation automatique
+│   ├── annotations.js      ← annotations (mode, popup, markers, filtre)
+│   ├── tracking-zones.js   ← zones manuelles à traiter / traitées (polygones)
+│   ├── measure.js          ← mesure linéaire (haversine, clic/double-clic, barre flottante)
+│   ├── overpass.js         ← requêtes Overpass API (OSM), import POI → annotations
+│   └── export.js           ← export GeoJSON / CSV / projet JSON complet
 └── README.md
 ```
 
@@ -72,27 +74,27 @@ geoint-explorer/
 ## Layout général
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│  BARRE PROJET : [Projet actif ▼]  [+ Nouveau]  [🗑 Supprimer] │
-├──────────────────────────────┬───────────────────────────────┤
-│                              │                               │
-│      CARTE D'ANALYSE         │      CARTE DE SUIVI           │
-│      (travail en cours)      │      (avancement global)      │
-│                              │                               │
-│  - Couches IGN               │  - Fond de carte sobre        │
-│  - Mode annotation on/off    │  - Zones "à traiter" (rouge)  │
-│  - Markers annotés           │  - Zones "traitées" (vert)    │
-│  - Navigation libre          │  - Historique navLog (bleu)   │
-│                              │  - Panneau liste latéral      │
-│                              │                               │
-├──────────────────────────────┴───────────────────────────────┤
-│  [Adresse / coordonnées]  [Couches]  [📌 Annoter]  [Export]  │
-└──────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│  PROJET : [Projet actif ▼]  [+ Nouveau]  [🗑]               │
+├──────────────────────────┬──────────────────────────────────┤
+│  [🔍 Recherche overlay]  │                                  │
+│    CARTE D'ANALYSE       │    CARTE DE SUIVI                │
+│    (travail en cours)    │    (avancement global)           │
+│                          │                                  │
+│  ← séparateur draggable →│                                  │
+├──────────────────────────┴──────────────────────────────────┤
+│ [Couches] [📌 Annoter] [≡ Annotations] [✏ Zone] [≡ Zones]  │
+│ [📐 Mesure] [↺ Reset] [🚶 Street View] [📷 Mapillary]       │
+│ [↓ GeoJSON] [↓ CSV] [↓ Projet] [↑ Projet]                  │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-Les deux cartes sont **indépendantes** (pas de synchronisation de vue). La carte de suivi est en lecture seule sauf pour le dessin de zones.
+- **Carte d'analyse** (gauche) — navigation libre, couches IGN/Google, annotations, rectangle de capture. Le champ de recherche est en overlay haut-gauche de la carte.
+- **Carte de suivi** (droite) — fond CARTO dark + labels villes/routes au-dessus des couches de suivi, historique de couverture, zones à traiter/traitées. Les contours des zones sont également visibles sur la carte d'analyse.
+- **Séparateur** — draggable pour redimensionner les deux volets ; double-clic pour revenir au 50/50.
+- La carte de suivi reste **centrée sur la carte d'analyse** en permanence.
 
-Sur écran < 900px : basculer en layout vertical (carte d'analyse au-dessus, carte de suivi en dessous, hauteur 50vh chacune).
+Sur écran < 900px : layout vertical (carte d'analyse au-dessus, carte de suivi en dessous, hauteur 50vh chacune).
 
 ---
 
@@ -106,12 +108,14 @@ Un **projet** regroupe annotations, journal de navigation et zones de suivi pour
 - Barre de projet en haut de l'interface : dropdown de sélection + bouton créer + bouton supprimer
 - Chaque projet est **isolé** : changer de projet recharge les données correspondantes sur les deux cartes
 - La suppression d'un projet est irréversible — demander confirmation avant d'exécuter
+- **Export projet** : bouton **↓ Projet** — sauvegarde complète en JSON (annotations, zones, navLog, layerConfig, lastView) avec champ `geoint_export_version` pour valider le format à l'import
+- **Import projet** : bouton **↑ Projet** — crée un **nouveau** projet depuis le fichier JSON (ne remplace pas le projet actif), bascule automatiquement vers lui ; affiche une erreur dans le bandeau si le fichier est invalide
 
 ### Structure de données
 
 Chaque projet est stocké sous une clé distincte : `geoint_project_{id}`. Un index global liste les projets disponibles sous la clé `geoint_index`.
 
-Chaque projet contient au minimum : `id`, `name`, `createdAt`, `lastView` (centre + zoom de la carte d'analyse), `layerConfig`, `annotations`, `navLog`, `trackingZones`.
+Chaque projet contient au minimum : `id`, `name`, `createdAt`, `lastView` (centre + zoom de la carte d'analyse), `layerConfig`, `annotations`, `navLog`, `trackingZones`, `streetviewVisits`.
 
 Ne pas rigidifier le schéma JSON au-delà de ces champs — laisser de la flexibilité pour les évolutions.
 
@@ -127,7 +131,7 @@ https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0
   &TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}
 ```
 
-### Couches disponibles
+### Couches IGN Géoplateforme
 
 | Nom UI | LAYER IGN | FORMAT | Zoom min | Zoom max |
 |---|---|---|---|---|
@@ -139,6 +143,14 @@ https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0
 | Routes | `TRANSPORTNETWORKS.ROADS` | `image/png` | 6 | 18 |
 
 > Les couches PCRS et Ortho 20cm ne chargent qu'à partir de zoom 18. En dessous, afficher un avertissement dans le sélecteur ("Non disponible à ce niveau de zoom") plutôt que de laisser des tuiles vides sans explication.
+
+### Couches Google (XYZ)
+
+| Nom UI | URL tuile | Note |
+|---|---|---|
+| Google Satellite | `https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}` | Activée par défaut |
+| Google Hybride | `lyrs=y` | Satellite + noms de rues |
+| Google Maps | `lyrs=m` | Carte routière |
 
 ### Sélecteur de couches
 
@@ -277,6 +289,65 @@ Les zones de suivi sont superposées aux rectangles bleus du navLog. Elles sont 
 
 ---
 
+## Module : Overpass (overpass.js)
+
+Permet d'interroger l'API Overpass (OSM) pour extraire des POIs et les importer comme annotations dans le projet actif.
+
+### Deux modes d'accès
+
+- **Mode zone** (`openOverpassPanel(zone)`) : déclenché depuis le popup d'une zone de suivi (bouton "Requête Overpass"). Interroge dans la bbox de la zone sélectionnée. L'import crée des annotations pour les POIs cochés.
+- **Mode standalone** (`btn-overpass-standalone`) : accessible depuis la barre de contrôle sans zone préalable. Le panneau `overpass-standalone-panel` permet de saisir une requête Overpass libre ou de choisir des presets sur la vue courante de la carte d'analyse.
+
+### Endpoint et contraintes
+
+```
+https://overpass-api.de/api/interpreter
+```
+- CORS ouvert — aucun proxy nécessaire
+- Timeout 45 secondes (`TIMEOUT_MS = 45_000`)
+- Limite à 500 résultats (`MAX_ITEMS = 500`)
+
+### Presets disponibles
+
+Catégories prédéfinies avec sous-types cochables individuellement :
+- **Infrastructures routières** : Ponts, Tunnels, Viaducs
+- **Santé** : Hôpitaux, Cliniques, Pharmacies, EHPAD
+- **Sécurité publique** : Police/Gendarmerie, Pompiers, Prisons
+- **Éducation** : Maternelles, Écoles primaires, Collèges, Lycées, Universités
+- **Transports** : Gares SNCF/RER, Métro, Tramway, Aérodromes, Hélistations, Ports
+- **Énergie** : Centrales, Transformateurs HT, Éoliennes, Pylônes HT
+
+### Workflow (mode zone, 3 phases)
+
+1. **Phase 1** : Sélection du preset et des sous-types → bouton "Lancer la requête"
+2. **Phase 2** : Résultats listés avec cases à cocher + sélection de la catégorie d'annotation + mode de nommage (tag OSM ou nom fixe)
+3. **Import** : Les POIs cochés sont créés comme annotations via `addAnnotationsBatch()` (fonction exportée par `annotations.js`)
+
+---
+
+## Module : Affichage des coordonnées
+
+La barre de contrôle affiche en permanence les coordonnées du **centre de la carte d'analyse** en deux systèmes :
+
+- **WGS84** (`coord-wgs84`) : `lat, lon` à 6 décimales
+- **Lambert 93** (`coord-l93`) : `X E  Y N` arrondi au décimètre (EPSG:2154, calcul analytique dans `wgs84ToLambert93()` dans `app.js`)
+
+Chaque valeur a un bouton copier (`btn-copy-wgs84`, `btn-copy-l93`) qui donne un retour visuel (✓ temporaire).
+
+---
+
+## Module : Mesure linéaire (measure.js)
+
+Outil de mesure de distance sur la **carte d'analyse** uniquement.
+
+- Bouton **📐 Mesure** dans la barre de contrôle active le mode (curseur crosshair)
+- **Clic** : ajoute un point ; **double-clic** : termine le tracé (le click du deuxième clic est retiré de la liste pour éviter le doublon)
+- Distance calculée avec la formule **haversine** (mètres < 1 km, km au-delà)
+- Pendant le tracé : ligne rouge + ligne de prévisualisation jaune pointillée jusqu'au curseur + hint de distance live
+- À la fin : barre flottante affiche la distance totale + bouton **⎘ copier dans le presse-papier**
+- `Échap` ou re-clic du bouton annule et vide les sources GeoJSON
+- Les 3 sources MapLibre (`measure-line`, `measure-points`, `measure-preview`) sont réutilisées entre les mesures — ne jamais créer de nouvelles sources
+
 ## Module : Persistance (storage.js)
 
 ### Gestion du quota
@@ -299,11 +370,29 @@ Toujours encapsuler les écritures `localStorage.setItem()` dans un try/catch. S
 
 ---
 
+## Vue terrain
+
+Boutons dans la barre de contrôle qui ouvrent un **nouvel onglet** centré sur les coordonnées actuelles de la carte d'analyse :
+
+| Bouton | Service | URL |
+|---|---|---|
+| 🚶 Street View | Google Maps | `https://maps.google.com/?layer=c&cbll={lat},{lon}` |
+| 📷 Mapillary | Mapillary | `https://www.mapillary.com/app/?lat={lat}&lng={lon}&z=18` |
+| 🌐 Panoramax | panoramax.ign.fr | `https://panoramax.ign.fr/?background=streets&focus=pic&map=17/{lat}/{lon}&speed=250&users=default` |
+| ☀️ SunCalc | suncalc.org | `https://www.suncalc.org/#/{lat},{lon},{zoom}/{date}/{time}/1/3` (date/heure courante) |
+
+Chaque clic sur Street View, Mapillary ou Panoramax enregistre également une **visite terrain** dans `project.streetviewVisits` (tableau de `{id, service, lat, lon, timestamp}`). Ces visites s'affichent sur la **carte de suivi** sous forme de cercles colorés : Street View = bleu `#4285F4`, Mapillary = vert `#05CB63`, Panoramax = orange `#FF6B35`. SunCalc ne génère pas de visite. Le reset navLog (↺) efface aussi `streetviewVisits`.
+
+---
+
 ## Comportements critiques
 
-- **CORS** : `data.geopf.fr` et `api-adresse.data.gouv.fr` ont des headers CORS ouverts. Aucun proxy nécessaire.
+- **CORS** : `data.geopf.fr`, `api-adresse.data.gouv.fr` et `overpass-api.de` ont des headers CORS ouverts. Aucun proxy nécessaire.
 - **Performance navLog** : utiliser une seule `GeoJSON source` MapLibre mise à jour par `setData()` — ne jamais ajouter un layer par entrée de log.
 - **Performance annotations** : idem, une source GeoJSON unique pour tous les markers du projet actif.
+- **Performance mesure** : les sources `measure-*` sont initialisées une seule fois au chargement de la carte ; `_initSources()` fait un early return si elles existent déjà.
+- **Reset navLog** : bouton **↺ Reset** vide l'historique de navigation (`navLog`) ET les visites terrain (`streetviewVisits`) du projet actif après confirmation — les annotations et zones manuelles sont conservées.
+- **Raccourcis clavier** : `Échap` quitte le mode annotation, dessin de zone ou mesure et ferme les popups ; `Entrée` valide la popup active.
 - **Responsive** : split 50/50 ≥ 900px, stack vertical < 900px.
 
 ---

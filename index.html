@@ -38,7 +38,7 @@
       <div id="capture-rect"></div>
       <!-- Géocodeur overlay top-left -->
       <div id="geocoder-overlay">
-        <input id="geocoder-input" type="text" placeholder="Adresse ou lat, lon…" autocomplete="off" spellcheck="false" />
+        <input id="geocoder-input" type="text" placeholder="Adresse, lat/lon, Plus Code…" autocomplete="off" spellcheck="false" />
         <ul id="geocoder-results"></ul>
         <div id="coords-display">
           <div class="coords-row">
@@ -51,6 +51,11 @@
             <span id="coord-l93" class="monospace">—</span>
             <button id="btn-copy-l93" class="btn-icon" title="Copier Lambert 93">⎘</button>
           </div>
+          <div class="coords-row">
+            <span class="coords-label">Plus Code</span>
+            <span id="coord-pluscode" class="monospace">—</span>
+            <button id="btn-copy-pluscode" class="btn-icon" title="Copier Plus Code">⎘</button>
+          </div>
         </div>
       </div>
       <div id="map-crosshair"></div>
@@ -58,19 +63,55 @@
       <aside id="annotations-panel" class="side-panel side-panel-analysis hidden">
         <div class="side-panel-header">
           <span>Annotations</span>
+          <button id="btn-annotations-select" class="btn-icon" title="Mode sélection">☑</button>
           <button id="btn-close-annotations-panel" class="btn-icon">✕</button>
         </div>
         <div class="side-panel-filters">
           <input id="annotation-search" type="text" placeholder="Rechercher…" />
           <select id="annotation-filter-category">
             <option value="">Toutes catégories</option>
-            <option value="Info">Info</option>
-            <option value="Alerte">Alerte</option>
-            <option value="Traité">Traité</option>
-            <option value="À vérifier">À vérifier</option>
           </select>
         </div>
         <ul id="annotations-list"></ul>
+        <div id="annotations-delete-bar" class="annotations-delete-bar hidden">
+          <label class="annotations-check-all-label">
+            <input type="checkbox" id="annotation-check-all" /> Tout
+          </label>
+          <button id="btn-annotations-delete-selected" class="btn-danger">Supprimer la sélection</button>
+        </div>
+      </aside>
+
+      <!-- Panneau Overpass requête brute -->
+      <aside id="overpass-standalone-panel" class="side-panel side-panel-analysis hidden">
+        <div class="side-panel-header">
+          <span>Overpass QL</span>
+          <button id="btn-sl-close" class="btn-icon">✕</button>
+        </div>
+        <div class="overpass-query-block">
+          <textarea id="sl-query" rows="8" spellcheck="false"
+            placeholder="[out:json][timeout:30];&#10;(&#10;  node[&quot;amenity&quot;=&quot;hospital&quot;](48.8,2.3,48.9,2.4);&#10;  way[&quot;amenity&quot;=&quot;hospital&quot;](48.8,2.3,48.9,2.4);&#10;);&#10;out center;"></textarea>
+          <div class="overpass-run-row">
+            <button id="btn-sl-run" class="btn-primary" disabled>Lancer</button>
+          </div>
+          <div id="sl-status" class="overpass-sl-status"></div>
+        </div>
+        <div id="sl-select-all-row" class="overpass-select-all hidden">
+          <label><input type="checkbox" id="sl-check-all" /> Tout sélectionner</label>
+        </div>
+        <ul id="sl-results-list"></ul>
+        <div id="sl-import-options" class="overpass-import-options hidden">
+          <div class="import-option-row">
+            <label for="sl-import-category">Catégorie</label>
+            <input type="text" id="sl-import-category" list="category-datalist" placeholder="ex : Info, Alerte…" />
+          </div>
+          <div class="import-option-row">
+            <label for="sl-import-color">Couleur</label>
+            <input type="color" id="sl-import-color" value="#60a5fa" />
+          </div>
+        </div>
+        <div id="sl-import-footer" class="overpass-import-footer hidden">
+          <button id="btn-sl-import" class="btn-primary">Importer la sélection</button>
+        </div>
       </aside>
     </section>
 
@@ -88,6 +129,58 @@
           <button id="btn-close-zones" class="btn-icon">✕</button>
         </div>
         <ul id="zones-list"></ul>
+      </aside>
+
+      <!-- Panneau BD TOPO ZAI (zone) -->
+      <aside id="overpass-panel" class="side-panel hidden">
+        <div class="side-panel-header">
+          <span>BD TOPO ZAI — <span id="overpass-zone-name"></span></span>
+          <button id="btn-close-overpass" class="btn-icon">✕</button>
+        </div>
+
+        <!-- Phase 1 : filtre nature + nom -->
+        <div id="overpass-phase-select">
+          <ul id="overpass-preset-list"></ul>
+          <div id="overpass-name-filter" class="overpass-name-filter">
+            <span class="overpass-name-label">Nom</span>
+            <select id="op-name-mode">
+              <option value="">— aucun —</option>
+              <option value="contains">contient</option>
+              <option value="starts">commence par</option>
+            </select>
+            <input type="text" id="op-name-val" placeholder="saisir…" disabled>
+          </div>
+          <div class="overpass-run-footer">
+            <button id="btn-overpass-run" class="btn-primary" disabled>Interroger BD TOPO IGN</button>
+          </div>
+        </div>
+
+        <!-- Phase 2 : résultats -->
+        <div id="overpass-phase-results" class="hidden">
+          <div class="overpass-results-header">
+            <button id="btn-overpass-back" class="btn-secondary">← Retour</button>
+            <span id="overpass-results-count" class="overpass-count"></span>
+          </div>
+          <div id="overpass-loading" class="overpass-loading hidden">Interrogation BD TOPO IGN…</div>
+          <div id="overpass-error" class="overpass-error hidden"></div>
+          <div id="overpass-select-all-row" class="overpass-select-all hidden">
+            <label><input type="checkbox" id="overpass-check-all" /> Tout sélectionner</label>
+          </div>
+          <ul id="overpass-results-list"></ul>
+          <div id="overpass-import-options" class="overpass-import-options hidden">
+            <div class="import-option-row">
+              <label for="op-import-category">Catégorie</label>
+              <input type="text" id="op-import-category" list="category-datalist" placeholder="ex : Militaire, Santé…" />
+            </div>
+            <div class="import-option-row">
+              <label for="op-import-color">Couleur</label>
+              <input type="color" id="op-import-color" value="#60a5fa" />
+            </div>
+          </div>
+          <div id="overpass-import-footer" class="overpass-import-footer hidden">
+            <button id="btn-overpass-import" class="btn-primary">Importer la sélection</button>
+          </div>
+        </div>
       </aside>
     </section>
 
@@ -127,12 +220,14 @@
       <button id="btn-streetview"  class="btn-control btn-terrain" title="Ouvrir dans Google Street View">🚶 Street View</button>
       <button id="btn-mapillary"   class="btn-control btn-terrain" title="Ouvrir dans Mapillary">📷 Mapillary</button>
       <button id="btn-panoramax"   class="btn-control btn-terrain" title="Ouvrir dans Panoramax">🌐 Panoramax</button>
-      <button id="btn-suncalc"     class="btn-control btn-terrain" title="Ouvrir SunCalc à la position courante">☀ SunCalc</button>
+      <button id="btn-suncalc"     class="btn-control btn-tool" title="Ouvrir SunCalc à la position courante">☀ SunCalc</button>
+      <button id="btn-w3w"         class="btn-control btn-tool" title="Ouvrir What3Words à la position courante">W3W</button>
     </div>
 
     <!-- Outils GEOINT -->
     <div class="control-group">
       <button id="btn-measure" class="btn-control btn-tool" title="Mesure linéaire (cliquez pour tracer, double-clic pour terminer)">📏 Mesure</button>
+      <button id="btn-overpass-standalone" class="btn-control btn-tool" title="Requête Overpass QL sur la vue courante">🔍 Overpass</button>
     </div>
 
     <!-- Export -->
@@ -216,6 +311,7 @@
       <button id="btn-save-zone" class="btn-primary">Enregistrer</button>
       <button id="btn-toggle-zone-status" class="btn-secondary hidden">Passer à Traité</button>
       <button id="btn-delete-zone" class="btn-danger hidden">Supprimer</button>
+      <button id="btn-zone-overpass" class="btn-secondary hidden">🗺 BD TOPO ZAI</button>
       <button id="btn-cancel-zone" class="btn-secondary">Annuler</button>
     </div>
   </div>

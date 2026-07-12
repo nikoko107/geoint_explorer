@@ -50,6 +50,7 @@ function createProjectData(name) {
     annotations: [],
     navLog: [],
     trackingZones: [],
+    streetviewVisits: [],
   };
 }
 

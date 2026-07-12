@@ -373,7 +373,7 @@ button:active { background: #1d2035; }
 #coords-display .coords-label {
   font-size: 10px;
   color: var(--text-dim);
-  width: 68px;
+  width: 76px;
   flex-shrink: 0;
 }
 #coords-display .monospace {
@@ -828,6 +828,378 @@ body.draw-poly-mode #map-tracking .maplibregl-canvas {
   cursor: ew-resize;
   user-select: none;
   letter-spacing: -1px;
+}
+
+/* ── Panneau Overpass ─────────────────────────────────────────── */
+
+#overpass-phase-select.hidden,
+#overpass-phase-results.hidden {
+  display: none;
+}
+
+#overpass-phase-select:not(.hidden) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+}
+
+#overpass-preset-list {
+  list-style: none;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.overpass-preset-item {
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+
+.overpass-preset-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.overpass-preset-header:hover { background: var(--bg-panel2); }
+.overpass-preset-item.selected > .overpass-preset-header {
+  background: rgba(59,130,246,0.12);
+  border-left: 2px solid var(--accent);
+}
+
+.overpass-preset-arrow {
+  font-size: 10px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  width: 10px;
+}
+
+/* Sous-items cochables */
+.overpass-items-list {
+  list-style: none;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: 4px 0;
+}
+.overpass-items-list.hidden { display: none; }
+
+.overpass-item-all {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px 5px 28px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+.overpass-item-all input[type=checkbox] { accent-color: var(--accent); cursor: pointer; }
+.overpass-item-all label { cursor: pointer; font-size: 11px; color: var(--text-dim); }
+
+.overpass-item-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px 5px 28px;
+  transition: background 0.1s;
+}
+.overpass-item-row:hover { background: var(--bg-panel2); }
+.overpass-item-row input[type=checkbox] { accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+.overpass-item-row label { cursor: pointer; font-size: 12px; color: var(--text); }
+
+.overpass-custom-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 10px 12px 4px;
+}
+.overpass-custom-hint code {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.overpass-name-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+}
+.overpass-name-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.overpass-name-filter select,
+.overpass-name-filter input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-size: 11px;
+  padding: 4px 6px;
+  outline: none;
+}
+.overpass-name-filter select { flex-shrink: 0; cursor: pointer; }
+.overpass-name-filter input { flex: 1; min-width: 0; }
+.overpass-name-filter input:focus,
+.overpass-name-filter select:focus { border-color: var(--accent); }
+.overpass-name-filter input:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.overpass-run-footer {
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.overpass-run-footer .btn-primary { width: 100%; }
+
+#overpass-phase-results:not(.hidden) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+}
+
+.overpass-results-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.overpass-count {
+  font-size: 11px;
+  color: var(--text-meta);
+  margin-left: auto;
+}
+
+.overpass-loading {
+  padding: 24px 12px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.overpass-error {
+  padding: 10px 12px;
+  color: var(--danger);
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.overpass-select-all {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+.overpass-select-all label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.overpass-select-all input[type=checkbox] { accent-color: var(--accent); }
+
+#overpass-results-list {
+  list-style: none;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.overpass-result-item {
+  padding: 7px 12px;
+  border-bottom: 1px solid rgba(42,47,62,0.6);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.overpass-result-item:hover { background: var(--bg-panel2); }
+.overpass-result-item input[type=checkbox] {
+  accent-color: var(--accent);
+  margin-top: 3px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.overpass-result-item label { cursor: pointer; flex: 1; }
+
+.overpass-import-options {
+  padding: 8px 12px 4px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.import-option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.import-option-row label {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  flex-shrink: 0;
+  width: 60px;
+}
+.import-option-row input[type=text] {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 3px 7px;
+  font-size: 12px;
+}
+.import-option-row input[type=color] {
+  width: 36px;
+  height: 24px;
+  padding: 1px 2px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-input);
+  cursor: pointer;
+}
+.overpass-import-footer {
+  padding: 8px 12px 12px;
+  flex-shrink: 0;
+}
+.overpass-import-footer .btn-primary { width: 100%; }
+
+/* Standalone panel — layout sans phases */
+.overpass-query-block {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+#sl-query {
+  background: var(--bg);
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  font-size: 11px;
+  font-family: var(--mono);
+  resize: vertical;
+  width: 100%;
+  outline: none;
+  line-height: 1.5;
+  min-height: 130px;
+  max-height: 320px;
+}
+#sl-query:focus { border-bottom-color: var(--accent); }
+
+.overpass-run-row {
+  padding: 8px 12px 6px;
+}
+.overpass-run-row .btn-primary { width: 100%; }
+
+.overpass-sl-status {
+  padding: 0 12px;
+  font-size: 11px;
+  line-height: 1.4;
+  word-break: break-word;
+  min-height: 0;
+  transition: padding 0.1s;
+}
+.overpass-sl-status:empty { padding: 0; }
+.overpass-sl-status.status-loading {
+  color: var(--text-dim);
+  font-style: italic;
+  padding-bottom: 8px;
+}
+.overpass-sl-status.status-error {
+  color: var(--danger);
+  padding-bottom: 8px;
+}
+.overpass-sl-status.status-count {
+  color: var(--text-meta);
+  padding-bottom: 8px;
+}
+
+#sl-results-list { list-style: none; overflow-y: auto; flex: 1; min-height: 0; }
+
+
+/* BD TOPO nature filter */
+#sl-nature-list {
+  list-style: none;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.bdtopo-group-header {
+  padding: 7px 12px 3px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  user-select: none;
+  border-top: 1px solid var(--border);
+  margin-top: 2px;
+}
+
+/* Tooltip tags Overpass */
+.overpass-tag-tooltip {
+  position: fixed;
+  z-index: 9999;
+  background: #131825;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 7px 10px;
+  font-size: 11px;
+  font-family: var(--mono);
+  max-width: 300px;
+  pointer-events: none;
+  line-height: 1.7;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+}
+.overpass-tag-tooltip.hidden { display: none; }
+.tt-key { color: #93c5fd; }
+.tt-eq  { color: var(--text-dim); }
+.tt-val { color: #86efac; }
+
+
+/* Annotations multi-delete */
+.annotations-delete-bar {
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.annotations-delete-bar.hidden { display: none; }
+.annotations-check-all-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.annotations-check-all-label input { accent-color: var(--accent); cursor: pointer; }
+.annotations-delete-bar .btn-danger { flex: 1; }
+.annotation-select-cb {
+  accent-color: var(--accent);
+  cursor: pointer;
+  margin-right: 4px;
+  flex-shrink: 0;
 }
 
 /* ── Responsive < 900px ───────────────────────────────────────── */

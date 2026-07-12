@@ -6,11 +6,12 @@ const LAYER_ID  = 'annotations-layer';
 const TRACKING_SOURCE_ID = 'annotations-tracking-source';
 const TRACKING_LAYER_ID  = 'annotations-tracking-layer';
 
-let _map         = null;
-let _mapTracking = null;
-let _annotations = [];
-let _annotationMode = false;
-let _editingId = null;
+let _map           = null;
+let _mapTracking   = null;
+let _annotations   = [];
+let _annotationMode  = false;
+let _selectionMode   = false;
+let _editingId     = null;
 let _pendingCoords = null;
 
 const CATEGORY_COLORS = {
@@ -38,11 +39,31 @@ export function reloadAnnotations(annotations) {
   _annotations = annotations || [];
   _renderAnnotations();
   _renderAnnotationsTracking();
+  _refreshCategoryFilter();
   _refreshAnnotationsList();
 }
 
 export function getAnnotations() {
   return _annotations;
+}
+
+export function addAnnotationsBatch(items) {
+  const ts = Date.now();
+  items.forEach((item, i) => {
+    _annotations.push({
+      id:        `a_${ts}_${i}`,
+      coords:    [item.lng, item.lat],
+      label:     item.label || '',
+      category:  item.category || 'Info',
+      color:     item.color || null,
+      createdAt: new Date().toISOString(),
+    });
+  });
+  saveActiveProject({ annotations: _annotations });
+  _renderAnnotations();
+  _renderAnnotationsTracking();
+  _refreshCategoryFilter();
+  _refreshAnnotationsList();
 }
 
 export function initAnnotationsTracking(mapTracking) {
@@ -75,7 +96,7 @@ function _renderAnnotationsTracking() {
   const features = _annotations.map(ann => ({
     type: 'Feature',
     geometry: { type: 'Point', coordinates: ann.coords },
-    properties: { color: CATEGORY_COLORS[ann.category] || '#94a3b8' },
+    properties: { color: ann.color || CATEGORY_COLORS[ann.category] || '#94a3b8' },
   }));
   _mapTracking.getSource(TRACKING_SOURCE_ID).setData({ type: 'FeatureCollection', features });
 }
@@ -142,7 +163,7 @@ function _renderAnnotations() {
       label: ann.label,
       category: ann.category,
       createdAt: ann.createdAt,
-      color: CATEGORY_COLORS[ann.category] || '#94a3b8',
+      color: ann.color || CATEGORY_COLORS[ann.category] || '#94a3b8',
     },
   }));
 
@@ -208,6 +229,7 @@ function _saveAnnotation() {
 
   saveActiveProject({ annotations: _annotations });
   _renderAnnotations();
+  _refreshCategoryFilter();
   _refreshAnnotationsList();
   _closeCreationPopup();
 }
@@ -238,6 +260,7 @@ function _showViewPopup(id) {
     _annotations = _annotations.filter(a => a.id !== id);
     saveActiveProject({ annotations: _annotations });
     _renderAnnotations();
+    _refreshCategoryFilter();
     _refreshAnnotationsList();
     popup.classList.add('hidden');
   };
@@ -246,19 +269,88 @@ function _showViewPopup(id) {
 // ── Panneau liste annotations ─────────────────────────────────────
 
 export function initAnnotationsPanel() {
-  const btn = document.getElementById('btn-annotations-list');
-  const panel = document.getElementById('annotations-panel');
-  const close = document.getElementById('btn-close-annotations-panel');
+  const btn    = document.getElementById('btn-annotations-list');
+  const panel  = document.getElementById('annotations-panel');
+  const close  = document.getElementById('btn-close-annotations-panel');
   const search = document.getElementById('annotation-search');
   const filter = document.getElementById('annotation-filter-category');
 
   btn?.addEventListener('click', () => {
     panel?.classList.toggle('hidden');
-    _refreshAnnotationsList();
+    if (!panel?.classList.contains('hidden')) {
+      _refreshCategoryFilter();
+      _refreshAnnotationsList();
+    }
   });
-  close?.addEventListener('click', () => panel?.classList.add('hidden'));
+  close?.addEventListener('click', () => {
+    panel?.classList.add('hidden');
+    if (_selectionMode) _exitSelectionMode();
+  });
   search?.addEventListener('input', _refreshAnnotationsList);
   filter?.addEventListener('change', _refreshAnnotationsList);
+
+  document.getElementById('btn-annotations-select')?.addEventListener('click', () => {
+    if (_selectionMode) _exitSelectionMode(); else _enterSelectionMode();
+  });
+
+  document.getElementById('annotation-check-all')?.addEventListener('change', e => {
+    document.querySelectorAll('#annotations-list input[type=checkbox]')
+      .forEach(cb => { cb.checked = e.target.checked; });
+  });
+
+  document.getElementById('btn-annotations-delete-selected')?.addEventListener('click', _deleteSelected);
+}
+
+function _enterSelectionMode() {
+  _selectionMode = true;
+  document.getElementById('btn-annotations-select')?.classList.add('active');
+  document.getElementById('annotations-delete-bar')?.classList.remove('hidden');
+  _refreshAnnotationsList();
+}
+
+function _exitSelectionMode() {
+  _selectionMode = false;
+  document.getElementById('btn-annotations-select')?.classList.remove('active');
+  document.getElementById('annotations-delete-bar')?.classList.add('hidden');
+  const checkAll = document.getElementById('annotation-check-all');
+  if (checkAll) checkAll.checked = false;
+  _refreshAnnotationsList();
+}
+
+function _syncCheckAll() {
+  const checkAll = document.getElementById('annotation-check-all');
+  if (!checkAll) return;
+  const all = [...document.querySelectorAll('#annotations-list input[type=checkbox]')];
+  checkAll.checked = all.length > 0 && all.every(cb => cb.checked);
+  checkAll.indeterminate = all.length > 0 && !checkAll.checked && all.some(cb => cb.checked);
+}
+
+function _deleteSelected() {
+  const checkboxes = document.querySelectorAll('#annotations-list input[type=checkbox]:checked');
+  const ids = [...checkboxes].map(cb => cb.dataset.id);
+  if (!ids.length) return;
+  if (!confirm(`Supprimer ${ids.length} annotation${ids.length > 1 ? 's' : ''} ?`)) return;
+  const idSet = new Set(ids);
+  _annotations = _annotations.filter(a => !idSet.has(a.id));
+  saveActiveProject({ annotations: _annotations });
+  _renderAnnotations();
+  _refreshCategoryFilter();
+  _refreshAnnotationsList();
+}
+
+function _refreshCategoryFilter() {
+  const select = document.getElementById('annotation-filter-category');
+  if (!select) return;
+  const current = select.value;
+  const cats = [...new Set(_annotations.map(a => a.category).filter(Boolean))].sort();
+  select.innerHTML = '<option value="">Toutes catégories</option>';
+  for (const cat of cats) {
+    const opt = document.createElement('option');
+    opt.value = cat;
+    opt.textContent = cat;
+    if (cat === current) opt.selected = true;
+    select.appendChild(opt);
+  }
 }
 
 function _refreshAnnotationsList() {
@@ -279,24 +371,42 @@ function _refreshAnnotationsList() {
   list.innerHTML = '';
 
   for (const ann of filtered) {
-    const li = document.createElement('li');
+    const li   = document.createElement('li');
     const date = new Date(ann.createdAt).toLocaleDateString('fr-FR');
+
+    if (_selectionMode) {
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.dataset.id = ann.id;
+      cb.className = 'annotation-select-cb';
+      cb.addEventListener('change', _syncCheckAll);
+      li.appendChild(cb);
+    }
+
     const dot = document.createElement('span');
-    dot.className = `list-dot ${categoryDot(ann.category)}`;
-    const div = document.createElement('div');
+    if (ann.color) {
+      dot.className = 'list-dot';
+      dot.style.backgroundColor = ann.color;
+    } else {
+      dot.className = `list-dot ${categoryDot(ann.category)}`;
+    }
+    const div  = document.createElement('div');
     const main = document.createElement('div');
-    main.className = 'list-item-main';
+    main.className  = 'list-item-main';
     main.textContent = ann.label || '(sans label)';
     const sub = document.createElement('div');
-    sub.className = 'list-item-sub';
+    sub.className   = 'list-item-sub';
     sub.textContent = `${ann.category} · ${date}`;
     div.append(main, sub);
     li.append(dot, div);
-    li.addEventListener('click', () => {
-      _map.flyTo({ center: ann.coords, zoom: 17 });
-    });
+
+    if (!_selectionMode) {
+      li.addEventListener('click', () => _map.flyTo({ center: ann.coords, zoom: 17 }));
+    }
     list.appendChild(li);
   }
+
+  if (_selectionMode) _syncCheckAll();
 }
 
 // ── Câblage UI ────────────────────────────────────────────────────
