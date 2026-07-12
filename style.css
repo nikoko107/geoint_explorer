@@ -1327,6 +1327,19 @@ body.draw-poly-mode #map-tracking .maplibregl-canvas {
 }
 .image-tool-empty.hidden { display: none; }
 
+.image-tool-exif {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-meta);
+  flex-shrink: 0;
+}
+.image-tool-exif.hidden { display: none; }
+.image-tool-exif #image-tool-exif-text { flex: 1; }
+
 .image-tool-footer {
   display: flex;
   align-items: center;

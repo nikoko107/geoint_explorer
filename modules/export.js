@@ -71,6 +71,7 @@ export function exportProject() {
     trackingZones:  project.trackingZones  || [],
     streetviewVisits: project.streetviewVisits || [],
     importedLayers: project.importedLayers || [],
+    referenceImage: project.referenceImage || null,
   };
 
   _download(
@@ -96,6 +97,7 @@ export function parseProjectImport(text) {
     trackingZones:    Array.isArray(data.trackingZones)    ? data.trackingZones    : [],
     streetviewVisits: Array.isArray(data.streetviewVisits) ? data.streetviewVisits : [],
     importedLayers:   Array.isArray(data.importedLayers)   ? data.importedLayers   : [],
+    referenceImage:   data.referenceImage && typeof data.referenceImage === 'object' ? data.referenceImage : null,
   };
 }
 

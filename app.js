@@ -7,7 +7,7 @@ import { initTrackingZones, reloadZones }                from './modules/trackin
 import { initExternalLayers, reloadExternalLayers } from './modules/external-layers.js';
 import { initExport, exportProject, parseProjectImport } from './modules/export.js';
 import { initMeasure } from './modules/measure.js';
-import { initImageTool } from './modules/image-tool.js';
+import { initImageTool, reloadImageTool } from './modules/image-tool.js';
 import { initOverpass, initOverpassStandalone, openOverpassPanel, openOverpassStandalone } from './modules/overpass.js';
 
 // ── Cartes ────────────────────────────────────────────────────────
@@ -188,6 +188,9 @@ function onProjectSwitch(project) {
   // Recharger calques importés
   reloadExternalLayers(project.importedLayers || []);
 
+  // Recharger image de référence
+  reloadImageTool(project.referenceImage || null);
+
   // Recharger visites terrain
   reloadSvVisits(project.streetviewVisits || []);
 }
@@ -292,7 +295,9 @@ function tryInit() {
   initMeasure(mapAnalysis);
 
   // Image de référence (zoom/rotation/mesure relative, hors carte)
-  initImageTool();
+  initImageTool(project?.referenceImage || null, {
+    onLocateGPS: (lat, lon) => mapAnalysis.flyTo({ center: [lon, lat], zoom: 17 }),
+  });
 
   // Popup coordonnées
   initCoordsDisplay(mapAnalysis);

@@ -387,6 +387,7 @@
     <div class="image-tool-toolbar">
       <button id="btn-img-load" class="btn-secondary">Charger…</button>
       <input id="image-tool-input" type="file" accept="image/*" style="display:none" />
+      <button id="btn-img-clear" class="btn-icon" title="Supprimer l'image de référence">🗑</button>
       <span class="image-tool-sep"></span>
       <button id="btn-img-zoom-out" class="btn-icon" title="Zoom arrière">−</button>
       <button id="btn-img-zoom-in"  class="btn-icon" title="Zoom avant">+</button>
@@ -401,6 +402,10 @@
     <div class="image-tool-canvas-wrap">
       <canvas id="image-tool-canvas"></canvas>
       <div id="image-tool-empty" class="image-tool-empty">Charger une image pour commencer…</div>
+    </div>
+    <div id="image-tool-exif" class="image-tool-exif hidden">
+      <span id="image-tool-exif-text"></span>
+      <button id="btn-img-locate-gps" class="btn-icon hidden" title="Centrer la carte d'analyse ici">📍</button>
     </div>
     <div class="image-tool-footer">
       <span id="image-tool-hint" class="poly-draw-hint">Aucune image chargée</span>

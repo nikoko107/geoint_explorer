@@ -52,6 +52,7 @@ function createProjectData(name) {
     trackingZones: [],
     streetviewVisits: [],
     importedLayers: [],
+    referenceImage: null,
   };
 }
 
@@ -142,6 +143,7 @@ export function createAndSwitchProject(data) {
     navLog:        data.navLog        || [],
     trackingZones: data.trackingZones || [],
     importedLayers: data.importedLayers || [],
+    referenceImage: data.referenceImage || null,
   };
   const index = storageGet(INDEX_KEY) || [];
   index.push(project.id);
