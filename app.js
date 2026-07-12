@@ -471,7 +471,7 @@ function initTerrainButtons(map) {
 
   document.getElementById('btn-w3w')?.addEventListener('click', () => {
     const { lat, lon } = center();
-    window.open(`https://what3words.com/?q=${lat.toFixed(6)},${lon.toFixed(6)}`, '_blank', 'noopener,noreferrer');
+    window.open(`https://what3words.com/${lat.toFixed(6)},${lon.toFixed(6)}`, '_blank', 'noopener,noreferrer');
   });
 }
 
