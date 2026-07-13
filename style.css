@@ -1276,6 +1276,11 @@ body.draw-poly-mode #map-tracking .maplibregl-canvas {
   font-size: 13px;
   font-weight: 600;
   flex-shrink: 0;
+  cursor: move;
+  user-select: none;
+}
+.image-tool-header #btn-close-image-tool {
+  cursor: pointer;
 }
 
 .image-tool-toolbar {
@@ -1338,7 +1343,27 @@ body.draw-poly-mode #map-tracking .maplibregl-canvas {
   flex-shrink: 0;
 }
 .image-tool-exif.hidden { display: none; }
-.image-tool-exif #image-tool-exif-text { flex: 1; }
+.image-tool-exif #image-tool-exif-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.image-tool-exif-details {
+  max-height: 160px;
+  overflow-y: auto;
+  border-top: 1px solid var(--border);
+  padding: 4px 10px;
+  flex-shrink: 0;
+}
+.image-tool-exif-details.hidden { display: none; }
+.exif-detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 3px 0;
+  font-size: 11px;
+  border-bottom: 1px solid rgba(42,47,62,0.5);
+}
+.exif-detail-row:last-child { border-bottom: none; }
+.exif-detail-label { color: var(--text-dim); white-space: nowrap; }
+.exif-detail-value { color: var(--text); text-align: right; font-family: var(--mono); }
 
 .image-tool-footer {
   display: flex;
