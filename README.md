@@ -203,7 +203,11 @@ Bouton **🖼 Image** — ouvre une fenêtre flottante indépendante de la carte
 3. **Calibrer** l'échelle : cliquer 2 points dont la distance réelle est connue, puis saisir cette distance (m)
 4. **Mesurer** : cliquer pour poser des points, double-clic pour terminer — la distance s'affiche en direct puis peut être copiée
 
-La fenêtre n'est pas modale (la carte d'analyse reste utilisable en parallèle) et fermer (**✕**) ne réinitialise rien — l'image, le zoom/rotation et la calibration restent en mémoire pour un retour rapide. Rien n'est persisté en `localStorage` (une image peut peser plusieurs Mo) ; un rechargement de page ou un changement de projet réinitialise l'outil.
+La fenêtre n'est pas modale (la carte d'analyse reste utilisable en parallèle) et fermer (**✕**) ne réinitialise rien. L'image (compressée, JPEG qualité ~80%, 1600px max), la vue (zoom/rotation) et la calibration sont **persistées dans le projet actif** : elles survivent à un rechargement de page et suivent le projet lors d'un changement (comme les annotations ou les zones). Bouton **🗑** pour supprimer explicitement l'image de référence du projet.
+
+### Métadonnées EXIF
+
+Au chargement, un parseur EXIF fait maison (aucune dépendance, lecture directe du JPEG) extrait Marque/Modèle d'appareil, date de prise de vue et coordonnées GPS si présentes — affichés dans un bandeau sous l'image. Si des coordonnées GPS sont trouvées, le bouton **📍** recentre directement la carte d'analyse sur cette position (zoom 17).
 
 ---
 
@@ -234,7 +238,7 @@ Ouvre la position courante dans un service externe (nouvel onglet).
 
 | Bouton | Action |
 |---|---|
-| **↓ Projet** | Exporte en JSON : annotations, zones, navLog, visites terrain, calques importés, config couches, dernière vue |
+| **↓ Projet** | Exporte en JSON : annotations, zones, navLog, visites terrain, calques importés, image de référence, config couches, dernière vue |
 | **↑ Projet** | Importe un `.json` — au choix, crée un **nouveau projet** ou **fusionne** dans un projet existant |
 
 ---
