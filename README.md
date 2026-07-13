@@ -2,6 +2,8 @@
 
 Outil de support au travail GEOINT (Geographic Intelligence). Application web entièrement statique — aucun backend, aucune clé API requise. Toutes les données sont stockées localement dans le navigateur.
 
+> 📖 Pour le manuel utilisateur complet (mode opératoire détaillé, captures d'écran, exemples de scénarios), voir [`DOCUMENTATION.md`](./DOCUMENTATION.md).
+
 ## Lancement
 
 Servir le dossier racine avec n'importe quel serveur HTTP statique :
