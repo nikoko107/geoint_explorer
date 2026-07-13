@@ -5,7 +5,6 @@
 // calibration sont persistées dans le projet actif ; fermer la fenêtre la
 // masque simplement.
 
-import { formatDist } from './measure.js';
 import { saveActiveProject } from './projects.js';
 import { storageGet, storageSet } from './storage.js';
 
@@ -13,6 +12,14 @@ const MAX_PERSIST_DIM = 1600; // plus grand côté de l'image compressée stock�
 const SAVE_DEBOUNCE_MS = 500;
 const WIN_GEO_KEY = 'geoint_image_tool_window'; // préférence globale, hors projet
 const HIT_TOLERANCE_PX = 8; // tolérance de clic sur un segment, en pixels canvas
+
+// Formatage des distances mesurées sur l'image — variante locale à 2
+// décimales (contrairement à formatDist() de measure.js, arrondie à l'entier
+// pour l'outil de mesure sur la carte, volontairement laissé inchangé).
+function _formatMeasureDist(m) {
+  if (m < 1000) return `${m.toFixed(2)} m`;
+  return `${(m / 1000).toFixed(2)} km`;
+}
 
 let _win = null, _canvas = null, _ctx = null;
 let _img = null;
@@ -128,8 +135,8 @@ function _drawOverlay() {
   if (!_img) return;
 
   // Segments persistants (calibration + mesures accumulées) — visibles en permanence
-  if (_calibSegment) _drawSegment(_calibSegment.points, '#fbbf24', formatDist(_calibSegment.distanceM));
-  for (const seg of _measureSegments) _drawSegment(seg.points, '#f87171', formatDist(seg.distanceM));
+  if (_calibSegment) _drawSegment(_calibSegment.points, '#fbbf24', _formatMeasureDist(_calibSegment.distanceM));
+  for (const seg of _measureSegments) _drawSegment(seg.points, '#f87171', _formatMeasureDist(seg.distanceM));
 
   const pts = _mode === 'calibrate' ? _calibPoints : (_mode === 'measure' ? _measurePoints : []);
   const color = _mode === 'calibrate' ? '#fbbf24' : '#f87171';
@@ -724,13 +731,13 @@ function _updateMeasureHint() {
   if (_mode !== 'measure') return;
   const pts = _previewPt ? [..._measurePoints, _previewPt] : _measurePoints;
   if (pts.length < 2) { _setHint('Cliquez pour mesurer'); return; }
-  _setHint(`Distance : ${formatDist(_totalImageDist(pts) * _pxToMeter)}`);
+  _setHint(`Distance : ${_formatMeasureDist(_totalImageDist(pts) * _pxToMeter)}`);
 }
 
 function _finishMeasure() {
   if (_measurePoints.length >= 2 && _pxToMeter) {
     const distM = _totalImageDist(_measurePoints) * _pxToMeter;
-    _lastMeasureText = formatDist(distM);
+    _lastMeasureText = _formatMeasureDist(distM);
     _measureSegments.push({ points: [..._measurePoints], distanceM: distM });
     _setHint(`✓ ${_lastMeasureText} — cliquez sur ⎘ pour copier`);
     document.getElementById('btn-img-measure-copy')?.classList.remove('hidden');
