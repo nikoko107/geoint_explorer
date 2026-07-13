@@ -203,11 +203,18 @@ Bouton **🖼 Image** — ouvre une fenêtre flottante indépendante de la carte
 3. **Calibrer** l'échelle : cliquer 2 points dont la distance réelle est connue, puis saisir cette distance (m)
 4. **Mesurer** : cliquer pour poser des points, double-clic pour terminer — la distance s'affiche en direct puis peut être copiée
 
-La fenêtre n'est pas modale (la carte d'analyse reste utilisable en parallèle) et fermer (**✕**) ne réinitialise rien. L'image (compressée, JPEG qualité ~80%, 1600px max), la vue (zoom/rotation) et la calibration sont **persistées dans le projet actif** : elles survivent à un rechargement de page et suivent le projet lors d'un changement (comme les annotations ou les zones). Bouton **🗑** pour supprimer explicitement l'image de référence du projet.
+La fenêtre n'est pas modale (la carte d'analyse reste utilisable en parallèle), se **déplace** par un cliquer-glisser sur son en-tête et se **redimensionne** par le coin (natif CSS) — position et taille sont mémorisées (préférence globale, indépendante du projet) et restaurées au rechargement. Fermer (**✕**) ne réinitialise rien. L'image (compressée, JPEG qualité ~80%, 1600px max), la vue (zoom/rotation) et la calibration sont **persistées dans le projet actif** : elles survivent à un rechargement de page et suivent le projet lors d'un changement (comme les annotations ou les zones). Bouton **🗑** pour supprimer explicitement l'image de référence du projet.
+
+### Segments de calibration et de mesure
+
+Le segment de calibration et chaque mesure terminée **restent dessinés sur l'image** avec leur valeur affichée (au lieu de disparaître une fois l'action terminée) — les mesures s'accumulent, ce qui permet de comparer plusieurs distances sur la même photo. Pour les retirer :
+
+- **Clic direct sur un segment** (hors mode Calibrer/Mesurer) : supprime uniquement celui-là. Cliquer sur le segment de calibration l'efface **et** invalide la calibration (recalibration nécessaire).
+- **Réinitialiser** : efface tous les segments dessinés et remet la vue à zéro, mais **conserve la calibration active** — pas besoin de recalibrer pour continuer à mesurer.
 
 ### Métadonnées EXIF
 
-Au chargement, un parseur EXIF fait maison (aucune dépendance, lecture directe du JPEG) extrait Marque/Modèle d'appareil, date de prise de vue et coordonnées GPS si présentes — affichés dans un bandeau sous l'image. Si des coordonnées GPS sont trouvées, le bouton **📍** recentre directement la carte d'analyse sur cette position (zoom 17).
+Au chargement, un parseur EXIF fait maison (aucune dépendance, lecture directe du JPEG) extrait un jeu de métadonnées standard : appareil/objectif, dates, paramètres de prise de vue (vitesse, ouverture, ISO, correction d'exposition, focale, programme d'exposition, mode de mesure, balance des blancs, flash), dimensions, et données GPS (coordonnées, altitude, direction, vitesse, date). Un résumé (appareil · date · GPS) est toujours visible ; le bouton **▸ Détails** déplie la liste complète des champs trouvés. Si des coordonnées GPS sont présentes, le bouton **📍** recentre directement la carte d'analyse sur cette position (zoom 17).
 
 ---
 
