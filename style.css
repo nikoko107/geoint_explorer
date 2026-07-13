@@ -762,6 +762,7 @@ button:active { background: #1d2035; }
 .dot-alerte        { background: #f87171; }
 .dot-traite        { background: #4ade80; }
 .dot-averifier     { background: #fbbf24; }
+.dot-photo         { background: #a78bfa; }
 .dot-default       { background: var(--text-dim); }
 
 /* ── Coordonnées curseur ──────────────────────────────────────── */

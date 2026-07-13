@@ -214,7 +214,11 @@ Le segment de calibration et chaque mesure terminée **restent dessinés sur l'i
 
 ### Métadonnées EXIF
 
-Au chargement, un parseur EXIF fait maison (aucune dépendance, lecture directe du JPEG) extrait un jeu de métadonnées standard : appareil/objectif, dates, paramètres de prise de vue (vitesse, ouverture, ISO, correction d'exposition, focale, programme d'exposition, mode de mesure, balance des blancs, flash), dimensions, et données GPS (coordonnées, altitude, direction, vitesse, date). Un résumé (appareil · date · GPS) est toujours visible ; le bouton **▸ Détails** déplie la liste complète des champs trouvés. Si des coordonnées GPS sont présentes, le bouton **📍** recentre directement la carte d'analyse sur cette position (zoom 17).
+Au chargement, un parseur EXIF fait maison (aucune dépendance, lecture directe du JPEG, byte-order `II` et `MM`) extrait un jeu de métadonnées standard : appareil/objectif, dates, paramètres de prise de vue (vitesse, ouverture, ISO, correction d'exposition, focale, programme d'exposition, mode de mesure, balance des blancs, flash), dimensions, et données GPS (coordonnées, altitude, direction, vitesse, date). Un résumé (appareil · date · GPS) est toujours visible ; le bouton **▸ Détails** déplie la liste complète des champs trouvés.
+
+Si des coordonnées GPS sont présentes : le bouton **📍** recentre la carte d'analyse sur cette position (zoom 17) ; le bouton **📌** ajoute directement une **annotation** à cette position, avec le nom du fichier photo en label et la catégorie **Photo**.
+
+> Toutes les photos n'embarquent pas de GPS — messageries, réseaux sociaux et captures d'écran suppriment souvent ce tag en gardant le reste de l'EXIF. L'absence de GPS affiché n'est donc pas nécessairement une erreur de lecture.
 
 ---
 

@@ -19,10 +19,11 @@ const CATEGORY_COLORS = {
   'Alerte':     '#f87171',
   'Traité':     '#4ade80',
   'À vérifier': '#fbbf24',
+  'Photo':      '#a78bfa',
 };
 
 function categoryDot(cat) {
-  const map = { 'Info': 'dot-info', 'Alerte': 'dot-alerte', 'Traité': 'dot-traite', 'À vérifier': 'dot-averifier' };
+  const map = { 'Info': 'dot-info', 'Alerte': 'dot-alerte', 'Traité': 'dot-traite', 'À vérifier': 'dot-averifier', 'Photo': 'dot-photo' };
   return map[cat] || 'dot-default';
 }
 
