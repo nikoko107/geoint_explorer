@@ -2,7 +2,7 @@ import { initStorage }        from './modules/storage.js';
 import { initProjects, getActiveProject, saveActiveProject, getActiveId, createAndSwitchProject, listProjects, mergeProjectAndSwitch } from './modules/projects.js';
 import { initLayers, initLayersPanel, reloadLayers, getLayerConfig, resizeCompareMap } from './modules/layers.js';
 import { initTracker, reloadNavLog, resetNavLog } from './modules/tracker.js';
-import { initAnnotations, initAnnotationsPanel, initAnnotationsTracking, reloadAnnotations } from './modules/annotations.js';
+import { initAnnotations, initAnnotationsPanel, initAnnotationsTracking, reloadAnnotations, addAnnotationsBatch } from './modules/annotations.js';
 import { initTrackingZones, reloadZones }                from './modules/tracking-zones.js';
 import { initExternalLayers, reloadExternalLayers } from './modules/external-layers.js';
 import { initExport, exportProject, parseProjectImport } from './modules/export.js';
@@ -297,6 +297,16 @@ function tryInit() {
   // Image de référence (zoom/rotation/mesure relative, hors carte)
   initImageTool(project?.referenceImage || null, {
     onLocateGPS: (lat, lon) => mapAnalysis.flyTo({ center: [lon, lat], zoom: 17 }),
+    onAddPhotoAnnotation: (lat, lon, name) => {
+      addAnnotationsBatch([{ lng: lon, lat, label: name, category: 'Photo' }]);
+      const banner = document.getElementById('quota-banner');
+      const msg    = document.getElementById('quota-message');
+      if (banner && msg) {
+        msg.textContent = `Annotation ajoutée : ${name}`;
+        banner.classList.remove('hidden');
+        setTimeout(() => banner.classList.add('hidden'), 4000);
+      }
+    },
   });
 
   // Popup coordonnées

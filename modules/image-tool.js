@@ -28,6 +28,7 @@ let _measureSegments = [];    // [{ points:[...], distanceM }, ...] — s'accumu
 let _exif = null;
 let _refMeta = null; // reflet de project.referenceImage en cours d'édition
 let _onLocateGPS = null;
+let _onAddPhotoAnnotation = null;
 let _saveTimer = null;
 let _winGeoSaveTimer = null;
 
@@ -256,7 +257,12 @@ function _exifReadIFD(view, tiffStart, ifdOffset, little) {
 }
 
 function _exifDms(arr) {
-  if (!Array.isArray(arr) || arr.length < 3) return null;
+  // Format standard EXIF : [degrés, minutes, secondes]. Certains encodeurs
+  // non conformes écrivent [degrés, minutes.décimales] ou juste [degrés] —
+  // on reste tolérant plutôt que de perdre la coordonnée.
+  if (!Array.isArray(arr) || arr.length === 0) return null;
+  if (arr.length === 1) return arr[0];
+  if (arr.length === 2) return arr[0] + arr[1] / 60;
   return arr[0] + arr[1] / 60 + arr[2] / 3600;
 }
 
@@ -423,6 +429,7 @@ function _renderExifPanel() {
   const el = document.getElementById('image-tool-exif');
   const text = document.getElementById('image-tool-exif-text');
   const btnLocate = document.getElementById('btn-img-locate-gps');
+  const btnAddAnnotation = document.getElementById('btn-img-add-annotation');
   const btnToggle = document.getElementById('btn-img-exif-toggle');
   const details = document.getElementById('image-tool-exif-details');
   if (!el || !text) return;
@@ -437,6 +444,7 @@ function _renderExifPanel() {
   if (!rows.length) {
     text.textContent = 'Aucune métadonnée EXIF';
     btnLocate?.classList.add('hidden');
+    btnAddAnnotation?.classList.add('hidden');
     btnToggle?.classList.add('hidden');
     details?.classList.add('hidden');
     el.classList.remove('hidden');
@@ -451,6 +459,7 @@ function _renderExifPanel() {
   text.textContent = parts.join(' · ') || 'Métadonnées EXIF disponibles';
   el.classList.remove('hidden');
   btnLocate?.classList.toggle('hidden', _exif.gpsLat == null);
+  btnAddAnnotation?.classList.toggle('hidden', _exif.gpsLat == null);
   btnToggle?.classList.remove('hidden');
 
   if (details) {
@@ -775,11 +784,12 @@ function _resetView() {
 
 // ── Câblage UI ────────────────────────────────────────────────────
 
-export function initImageTool(referenceImage, { onLocateGPS } = {}) {
+export function initImageTool(referenceImage, { onLocateGPS, onAddPhotoAnnotation } = {}) {
   _win = document.getElementById('image-tool-window');
   _canvas = document.getElementById('image-tool-canvas');
   if (!_win || !_canvas) return;
   _ctx = _canvas.getContext('2d');
+  _onAddPhotoAnnotation = onAddPhotoAnnotation || null;
   _onLocateGPS = onLocateGPS || null;
 
   _applyWindowGeometry();
@@ -862,6 +872,12 @@ export function initImageTool(referenceImage, { onLocateGPS } = {}) {
 
   document.getElementById('btn-img-locate-gps')?.addEventListener('click', () => {
     if (_exif?.gpsLat != null && _onLocateGPS) _onLocateGPS(_exif.gpsLat, _exif.gpsLon);
+  });
+
+  document.getElementById('btn-img-add-annotation')?.addEventListener('click', () => {
+    if (_exif?.gpsLat != null && _onAddPhotoAnnotation) {
+      _onAddPhotoAnnotation(_exif.gpsLat, _exif.gpsLon, _refMeta?.name || 'Photo');
+    }
   });
 
   document.getElementById('btn-img-exif-toggle')?.addEventListener('click', e => {
