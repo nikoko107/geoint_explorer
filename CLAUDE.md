@@ -90,7 +90,7 @@ geoint-explorer/
 ```
 
 - **Carte d'analyse** (gauche) — navigation libre, couches IGN/Google, annotations, rectangle de capture. Le champ de recherche est en overlay haut-gauche de la carte.
-- **Carte de suivi** (droite) — fond CARTO dark + labels villes/routes au-dessus des couches de suivi, historique de couverture, zones à traiter/traitées. Les contours des zones sont également visibles sur la carte d'analyse.
+- **Carte de suivi** (droite) — fond Esri Dark Gray + labels villes/routes au-dessus des couches de suivi, historique de couverture, zones à traiter/traitées. Les contours des zones sont également visibles sur la carte d'analyse.
 - **Séparateur** — draggable pour redimensionner les deux volets ; double-clic pour revenir au 50/50.
 - La carte de suivi reste **centrée sur la carte d'analyse** en permanence.
 
