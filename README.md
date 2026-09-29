@@ -39,7 +39,7 @@ python3 -m http.server 8080
 ```
 
 - **Carte d'analyse** (gauche) — navigation libre, couches IGN/Google, annotations, rectangle de capture. Overlay haut-gauche avec recherche et coordonnées (WGS84, Lambert 93, Plus Code).
-- **Carte de suivi** (droite) — fond sombre Carto avec labels villes/routes/rues au-dessus des couches de suivi, historique de couverture, zones à traiter/traitées.
+- **Carte de suivi** (droite) — fond sombre Esri Dark Gray avec labels villes/routes/rues au-dessus des couches de suivi, historique de couverture, zones à traiter/traitées.
 - **Séparateur** — draggable pour redimensionner les deux volets ; double-clic pour revenir au 50/50.
 - La carte de suivi reste **centrée sur la carte d'analyse** en permanence.
 
