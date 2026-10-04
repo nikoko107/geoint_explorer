@@ -9,6 +9,7 @@ import { initExport, exportProject, parseProjectImport } from './modules/export.
 import { initMeasure } from './modules/measure.js';
 import { initImageTool, reloadImageTool } from './modules/image-tool.js';
 import { initOverpass, initOverpassStandalone, openOverpassPanel, openOverpassStandalone } from './modules/overpass.js';
+import { hitHigherPriority, isDrawingZone } from './modules/tracking-hits.js';
 
 // ── Cartes ────────────────────────────────────────────────────────
 
@@ -145,6 +146,13 @@ function initTrackingSync() {
   mapAnalysis.on('move', () => {
     const c = mapAnalysis.getCenter();
     mapTracking.setCenter([c.lng, c.lat]);
+  });
+
+  // Double-clic sur le fond de la carte de suivi : centrer l'analyse, zoom conservé
+  mapTracking.doubleClickZoom.disable();
+  mapTracking.on('dblclick', e => {
+    if (isDrawingZone() || hitHigherPriority(mapTracking, e.point, null)) return;
+    mapAnalysis.flyTo({ center: e.lngLat, zoom: mapAnalysis.getZoom() });
   });
 }
 
@@ -474,6 +482,13 @@ function initSvVisits(trackingMap, visits) {
   trackingMap.on('mouseleave', SV_LAYER, () => {
     trackingMap.getCanvas().style.cursor = '';
     popup.remove();
+  });
+
+  // Clic : centrer la carte d'analyse sur la visite
+  trackingMap.on('click', SV_LAYER, e => {
+    if (isDrawingZone() || hitHigherPriority(trackingMap, e.point, 'visits')) return;
+    if (!e.features?.length) return;
+    mapAnalysis.flyTo({ center: e.features[0].geometry.coordinates, zoom: Math.max(mapAnalysis.getZoom(), 18) });
   });
 }
 

@@ -1,4 +1,5 @@
 import { saveActiveProject } from './projects.js';
+import { isDrawingZone } from './tracking-hits.js';
 
 const SOURCE_ID = 'annotations-source';
 const LAYER_ID  = 'annotations-layer';
@@ -89,6 +90,25 @@ export function initAnnotationsTracking(mapTracking) {
     },
   });
 
+  // Survol : label ; clic : centrer la carte d'analyse sur l'annotation
+  const tooltip = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: 'tracking-tooltip' });
+  _mapTracking.on('mouseenter', TRACKING_LAYER_ID, e => {
+    if (isDrawingZone() || !e.features?.length) return;
+    _mapTracking.getCanvas().style.cursor = 'pointer';
+    const p = e.features[0].properties;
+    tooltip.setLngLat(e.features[0].geometry.coordinates)
+      .setText([p.label || '(sans label)', p.category].filter(Boolean).join(' — '))
+      .addTo(_mapTracking);
+  });
+  _mapTracking.on('mouseleave', TRACKING_LAYER_ID, () => {
+    _mapTracking.getCanvas().style.cursor = '';
+    tooltip.remove();
+  });
+  _mapTracking.on('click', TRACKING_LAYER_ID, e => {
+    if (isDrawingZone() || !e.features?.length || !_map) return;
+    _map.flyTo({ center: e.features[0].geometry.coordinates, zoom: Math.max(_map.getZoom(), 18) });
+  });
+
   _renderAnnotationsTracking();
 }
 
@@ -97,7 +117,10 @@ function _renderAnnotationsTracking() {
   const features = _annotations.map(ann => ({
     type: 'Feature',
     geometry: { type: 'Point', coordinates: ann.coords },
-    properties: { color: ann.color || CATEGORY_COLORS[ann.category] || '#94a3b8' },
+    properties: {
+      color: ann.color || CATEGORY_COLORS[ann.category] || '#94a3b8',
+      label: ann.label || '', category: ann.category || '',
+    },
   }));
   _mapTracking.getSource(TRACKING_SOURCE_ID).setData({ type: 'FeatureCollection', features });
 }

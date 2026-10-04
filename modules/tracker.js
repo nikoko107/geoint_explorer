@@ -1,4 +1,5 @@
 import { saveActiveProject } from './projects.js';
+import { hitHigherPriority, isDrawingZone } from './tracking-hits.js';
 
 // Niveaux de couverture
 export const COVERAGE_LEVELS = {
@@ -175,14 +176,20 @@ function _initTrackingSource() {
     _hideTrackingTooltip();
   });
 
-  // Clic : centrer carte d'analyse
+  // Clic : centrer carte d'analyse sur le rectangle au zoom le plus élevé sous le curseur
   _mapTracking.on('click', LAYER_ID + '-fill', e => {
-    if (document.body.classList.contains('draw-poly-mode')) return; // dessin de zone en cours
+    if (isDrawingZone()) return;
+    if (hitHigherPriority(_mapTracking, e.point, 'navLog')) return;
     if (!e.features?.length) return;
-    const bbox = JSON.parse(e.features[0].properties.bboxJson);
+    const best = e.features.reduce((a, f) => {
+      const za = a.properties.zoom, zf = f.properties.zoom;
+      if (zf !== za) return zf > za ? f : a;
+      return f.properties.timestamp > a.properties.timestamp ? f : a;
+    });
+    const bbox = JSON.parse(best.properties.bboxJson);
     const lng = (bbox[0] + bbox[2]) / 2;
     const lat = (bbox[1] + bbox[3]) / 2;
-    _mapAnalysis.flyTo({ center: [lng, lat], zoom: e.features[0].properties.zoom });
+    _mapAnalysis.flyTo({ center: [lng, lat], zoom: best.properties.zoom });
   });
 }
 

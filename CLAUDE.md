@@ -93,6 +93,12 @@ geoint-explorer/
 - **Carte de suivi** (droite) — fond Esri Dark Gray + labels villes/routes au-dessus des couches de suivi, historique de couverture, zones à traiter/traitées. Les contours des zones sont également visibles sur la carte d'analyse.
 - **Séparateur** — draggable pour redimensionner les deux volets ; double-clic pour revenir au 50/50.
 - La carte de suivi reste **centrée sur la carte d'analyse** en permanence.
+- **Pilotage depuis la carte de suivi** : une seule action par clic, par priorité *annotation > visite terrain > zone > rectangle historique > fond vide* (`modules/tracking-hits.js`, `hitHigherPriority()`) :
+  - annotation / visite terrain : clic = analyse centrée dessus (zoom ≥ 18) ; survol annotation = `label — catégorie`
+  - zone : clic = popup de la zone + analyse cadrée sur la zone
+  - rectangle historique : clic = analyse centrée sur le rectangle **au zoom le plus élevé** sous le curseur
+  - fond vide : **double-clic** = analyse centrée sur ce point, zoom conservé (`doubleClickZoom` désactivé sur la carte de suivi)
+  - aucune de ces actions pendant un mode de dessin de zone
 
 Sur écran < 900px : layout vertical (carte d'analyse au-dessus, carte de suivi en dessous, hauteur 50vh chacune).
 
@@ -251,7 +257,7 @@ Ces niveaux sont utilisés à la fois pour la **couleur des rectangles** sur la 
 - Chaque entrée = rectangle semi-transparent coloré selon son **niveau de couverture** (voir tableau ci-dessus)
 - Sur une même zone géographique, si plusieurs entrées existent à des niveaux différents, afficher la couleur du **niveau le plus élevé atteint** — ce niveau ne peut qu'augmenter, jamais régresser. Si l'utilisateur repasse sur une zone à un zoom plus faible, la couleur affichée reste celle du zoom maximum historique pour cette zone.
 - Survol : tooltip `[date heure] zoom X — Niveau : {Survol / Inspection / Analyse détaillée}`
-- Clic : centrer la carte d'analyse sur cette bbox
+- Clic : centrer la carte d'analyse sur cette bbox ; si plusieurs rectangles se superposent, celui au zoom le plus élevé est retenu
 
 ### Panneau liste (dans la zone de suivi)
 

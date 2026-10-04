@@ -1,5 +1,6 @@
 import { saveActiveProject } from './projects.js';
 import { getNavLog, coverageLevelRank, COVERAGE_LEVELS } from './tracker.js';
+import { hitHigherPriority } from './tracking-hits.js';
 
 const SOURCE_ID    = 'zones-source';
 const FILL_LAYER   = 'zones-fill';
@@ -104,9 +105,12 @@ function _initZoneSource() {
   });
   _map.on('click', FILL_LAYER, e => {
     if (_drawMode) return;
+    if (hitHigherPriority(_map, e.point, 'zones')) return;
     if (!e.features?.length) return;
-    e.stopPropagation?.();
-    _showZonePopup(e.features[0].properties.id);
+    const id = e.features[0].properties.id;
+    const zone = _zones.find(z => z.id === id);
+    if (zone) _fitAnalysisToZone(zone);
+    _showZonePopup(id);
   });
 }
 
@@ -691,12 +695,14 @@ function _refreshZonesList() {
     sub.textContent = `${statusLabel}${lvlLabel ? ' · ' + lvlLabel : ''}`;
     div.append(main, sub);
     li.append(dot, div);
-    li.addEventListener('click', () => {
-      const [w, s, e, n] = bbox;
-      _mapAnalysis.fitBounds([[w, s], [e, n]], { padding: 40 });
-    });
+    li.addEventListener('click', () => _fitAnalysisToZone(zone));
     list.appendChild(li);
   }
+}
+
+function _fitAnalysisToZone(zone) {
+  const [w, s, e, n] = _zoneBbox(zone);
+  _mapAnalysis?.fitBounds([[w, s], [e, n]], { padding: 40 });
 }
 
 // ── Couverture navLog ─────────────────────────────────────────────
