@@ -300,6 +300,43 @@ button:active { background: #1d2035; }
   color: #67e8f9;
   white-space: nowrap;
 }
+.poly-draw-hint.error { color: #f87171; }
+
+/* Menu modes de création de zone */
+.zone-mode-menu {
+  min-width: 190px;
+  padding: 4px 0;
+}
+.zone-mode-item {
+  background: none;
+  border: none;
+  color: var(--text);
+  text-align: left;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.zone-mode-item:hover { background: #242840; }
+
+/* Barre zone depuis un point */
+.point-zone-value {
+  width: 80px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 12px;
+}
+.point-zone-select {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 3px 4px;
+  font-size: 12px;
+}
+.point-zone-select.hidden { display: none; }
 
 /* ── Boutons outils GEOINT ────────────────────────────────────── */
 .btn-tool {

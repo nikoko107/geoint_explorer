@@ -15,17 +15,32 @@ const PREVIEW_VERTS  = 'zone-preview-verts';
 
 const STATUS_COLORS = { todo: '#ef4444', done: '#22c55e' };
 
+const ISOCHRONE_URL     = 'https://data.geopf.fr/navigation/isochrone';
+const ISOCHRONE_TIMEOUT = 20_000;
+const EARTH_RADIUS_M    = 6_371_008.8;
+
+// Modes de création depuis un point cliqué sur la carte de suivi
+const POINT_MODES = {
+  circle:      { label: 'Cercle',      units: ['m', 'km'], defaultValue: 500, defaultUnit: 'm',   profile: false },
+  isodistance: { label: 'Isodistance', units: ['m', 'km'], defaultValue: 1,   defaultUnit: 'km',  profile: true  },
+  isochrone:   { label: 'Isochrone',   units: ['min'],     defaultValue: 15,  defaultUnit: 'min', profile: true  },
+};
+const PROFILE_LABELS = { pedestrian: 'à pied', car: 'voiture' };
+
 let _map         = null;
 let _mapAnalysis = null;
 let _zones       = [];
 
 // État de dessin
-let _drawMode   = null; // null | 'poly'
+let _drawMode   = null; // null | 'poly' | 'circle' | 'isodistance' | 'isochrone'
 let _polyPoints = [];   // [{lng, lat}]
+let _pointCenter = null; // {lng, lat} — modes point
+let _pointBusy   = false;
 
 // Handlers DOM détachables
 let _onPolyClick = null;
 let _onPolyMove  = null;
+let _onPointClick = null;
 
 let _onOverpassRequest = null;
 
@@ -311,17 +326,218 @@ function _updateHint() {
 
 // ── Sortie des modes ──────────────────────────────────────────────
 
-function _exitDrawMode() {
+function _exitDrawMode(keepPreview = false) {
   if (_drawMode === 'poly') {
     _map.off('click', _onPolyClick);
     _map.off('mousemove', _onPolyMove);
-    document.body.classList.remove('draw-poly-mode');
-    document.getElementById('btn-draw-poly')?.classList.remove('active');
     document.getElementById('poly-draw-bar')?.classList.add('hidden');
     _polyPoints = [];
-    _clearPreview();
+  } else if (POINT_MODES[_drawMode]) {
+    _map.off('click', _onPointClick);
+    document.getElementById('point-zone-bar')?.classList.add('hidden');
+    _pointCenter = null;
+    _pointBusy   = false;
+  }
+  if (_drawMode) {
+    document.body.classList.remove('draw-poly-mode');
+    document.getElementById('btn-draw-poly')?.classList.remove('active');
+    if (!keepPreview) _clearPreview();
   }
   _drawMode = null;
+}
+
+// ── Modes point : cercle / isodistance / isochrone ────────────────
+
+function _enterPointMode(kind) {
+  const cfg = POINT_MODES[kind];
+  if (!cfg) return;
+  _drawMode    = kind;
+  _pointCenter = null;
+  _pointBusy   = false;
+  document.body.classList.add('draw-poly-mode');
+  document.getElementById('btn-draw-poly')?.classList.add('active');
+
+  const unitSel = document.getElementById('point-zone-unit');
+  unitSel.innerHTML = '';
+  for (const u of cfg.units) {
+    const opt = document.createElement('option');
+    opt.value = u; opt.textContent = u;
+    unitSel.appendChild(opt);
+  }
+  unitSel.value = cfg.defaultUnit;
+  unitSel.classList.toggle('hidden', cfg.units.length < 2);
+  document.getElementById('point-zone-value').value = cfg.defaultValue;
+  document.getElementById('point-zone-profile').classList.toggle('hidden', !cfg.profile);
+  document.getElementById('point-zone-bar')?.classList.remove('hidden');
+  _setPointHint(`${cfg.label} — cliquez un point sur la carte de suivi`);
+
+  _onPointClick = e => {
+    if (_pointBusy) return;
+    _pointCenter = { lng: e.lngLat.lng, lat: e.lngLat.lat };
+    _updatePointPreview();
+    _setPointHint(`${cfg.label} — ${_pointCenter.lat.toFixed(5)}, ${_pointCenter.lng.toFixed(5)}`);
+  };
+  _map.on('click', _onPointClick);
+}
+
+function _setPointHint(text, isError = false) {
+  const hint = document.getElementById('point-zone-hint');
+  if (!hint) return;
+  hint.textContent = text;
+  hint.classList.toggle('error', isError);
+}
+
+// Lit la valeur saisie, convertie en mètres (cercle / isodistance) ou minutes (isochrone)
+function _readPointValue() {
+  const raw  = parseFloat(document.getElementById('point-zone-value').value);
+  const unit = document.getElementById('point-zone-unit').value;
+  if (!Number.isFinite(raw) || raw <= 0) return null;
+  const value = unit === 'km' ? raw * 1000 : raw;
+  return { raw, unit, value };
+}
+
+function _updatePointPreview(ring = null) {
+  if (!_pointCenter) { _clearPreview(); return; }
+  const features = [
+    { type: 'Feature', geometry: { type: 'Point', coordinates: [_pointCenter.lng, _pointCenter.lat] } },
+  ];
+  if (!ring && _drawMode === 'circle') {
+    const v = _readPointValue();
+    if (v) ring = _circlePolygon(_pointCenter, v.value);
+  }
+  if (ring) {
+    features.push({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [ring] } });
+    features.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: ring } });
+  }
+  _map.getSource(PREVIEW_SOURCE)?.setData({ type: 'FeatureCollection', features });
+}
+
+async function _generatePointZone() {
+  const kind = _drawMode;
+  const cfg  = POINT_MODES[kind];
+  if (!cfg || _pointBusy) return;
+  if (!_pointCenter) { _setPointHint('Cliquez d\'abord un point sur la carte de suivi', true); return; }
+  const v = _readPointValue();
+  if (!v) { _setPointHint('Valeur invalide', true); return; }
+
+  const center  = _pointCenter;
+  const profile = cfg.profile ? document.getElementById('point-zone-profile').value : null;
+  let ring;
+
+  if (kind === 'circle') {
+    ring = _circlePolygon(center, v.value);
+  } else {
+    _pointBusy = true;
+    _setPointHint('Calcul IGN en cours…');
+    try {
+      ring = await _fetchIsochrone(center, {
+        costType:  kind === 'isochrone' ? 'time' : 'distance',
+        costValue: v.value,
+        profile,
+      });
+    } catch (err) {
+      if (_drawMode !== kind) return; // mode quitté pendant l'appel
+      _pointBusy = false;
+      _setPointHint(`Erreur IGN : ${err.message}`, true);
+      return;
+    }
+    if (_drawMode !== kind) return;
+  }
+
+  const ringOpen = ring.slice(0, -1);
+  const lngs = ringOpen.map(c => c[0]);
+  const lats = ringOpen.map(c => c[1]);
+  const bbox = [Math.min(...lngs), Math.min(...lats), Math.max(...lngs), Math.max(...lats)];
+
+  const valueLabel = `${v.raw} ${v.unit}`;
+  const name = profile
+    ? `${cfg.label} ${PROFILE_LABELS[profile]} ${valueLabel}`
+    : `${cfg.label} ${valueLabel}`;
+
+  _updatePointPreview(ring);
+  _exitDrawMode(true);
+  _openNewZonePopup({
+    shapeType: 'poly',
+    coordinates: ringOpen,
+    bbox,
+    generator: {
+      type: kind,
+      center: [center.lng, center.lat],
+      value: v.raw, unit: v.unit,
+      ...(profile ? { profile } : {}),
+    },
+  }, name);
+}
+
+// Cercle géodésique (sphère) — anneau fermé [lng, lat]
+function _circlePolygon(center, radiusM, steps = 64) {
+  const toRad = d => d * Math.PI / 180;
+  const toDeg = r => r * 180 / Math.PI;
+  const lat1 = toRad(center.lat);
+  const lng1 = toRad(center.lng);
+  const d    = radiusM / EARTH_RADIUS_M;
+  const ring = [];
+  for (let i = 0; i < steps; i++) {
+    const brg  = (2 * Math.PI * i) / steps;
+    const lat2 = Math.asin(Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(brg));
+    const lng2 = lng1 + Math.atan2(
+      Math.sin(brg) * Math.sin(d) * Math.cos(lat1),
+      Math.cos(d) - Math.sin(lat1) * Math.sin(lat2),
+    );
+    ring.push([toDeg(lng2), toDeg(lat2)]);
+  }
+  ring.push(ring[0]);
+  return ring;
+}
+
+// API isochrone/isodistance IGN Géoplateforme — retourne l'anneau extérieur fermé
+async function _fetchIsochrone(center, { costType, costValue, profile }) {
+  const params = new URLSearchParams({
+    point: `${center.lng},${center.lat}`,
+    resource: 'bdtopo-valhalla',
+    costType,
+    costValue: String(costValue),
+    profile,
+    direction: 'departure',
+    timeUnit: 'minute',
+    distanceUnit: 'meter',
+    geometryFormat: 'geojson',
+  });
+
+  const ctrl  = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ISOCHRONE_TIMEOUT);
+  let res, data;
+  try {
+    res  = await fetch(`${ISOCHRONE_URL}?${params}`, { signal: ctrl.signal });
+    data = await res.json().catch(() => null);
+  } catch (err) {
+    throw new Error(err.name === 'AbortError' ? 'délai dépassé' : 'service injoignable');
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (!res.ok) {
+    throw new Error(data?.error?.message || `HTTP ${res.status}`);
+  }
+
+  const geom = data?.geometry;
+  let rings = [];
+  if (geom?.type === 'Polygon')           rings = [geom.coordinates[0]];
+  else if (geom?.type === 'MultiPolygon') rings = geom.coordinates.map(p => p[0]);
+  rings = rings.filter(r => Array.isArray(r) && r.length >= 4);
+  if (!rings.length) throw new Error('aucune zone retournée (point hors réseau ?)');
+
+  // Garder le plus grand polygone (aire planaire approchée)
+  const area = r => Math.abs(r.reduce((a, c, i) => {
+    const n = r[(i + 1) % r.length];
+    return a + (c[0] * n[1] - n[0] * c[1]);
+  }, 0));
+  const ring = rings.reduce((best, r) => area(r) > area(best) ? r : best);
+
+  const closed = ring.map(c => [c[0], c[1]]);
+  const f = closed[0], l = closed[closed.length - 1];
+  if (f[0] !== l[0] || f[1] !== l[1]) closed.push([f[0], f[1]]);
+  return closed;
 }
 
 // ── Popup zone ────────────────────────────────────────────────────
@@ -329,13 +545,13 @@ function _exitDrawMode() {
 let _pendingZone = null; // géométrie en attente de validation
 let _editingZoneId = null;
 
-function _openNewZonePopup(geomData) {
+function _openNewZonePopup(geomData, defaultName = '') {
   _pendingZone = geomData;
   _editingZoneId = null;
 
   const popup = document.getElementById('zone-popup');
   document.getElementById('zone-popup-title').textContent = 'Nouvelle zone';
-  document.getElementById('zone-name').value = '';
+  document.getElementById('zone-name').value = defaultName;
   document.getElementById('zone-status').value = 'todo';
   document.getElementById('zone-coverage-info').classList.add('hidden');
   document.getElementById('btn-toggle-zone-status').classList.add('hidden');
@@ -344,7 +560,9 @@ function _openNewZonePopup(geomData) {
   document.getElementById('btn-zone-overpass')?.classList.add('hidden');
 
   popup.classList.remove('hidden');
-  document.getElementById('zone-name').focus();
+  const nameInput = document.getElementById('zone-name');
+  nameInput.focus();
+  nameInput.select();
 }
 
 function _showZonePopup(id) {
@@ -386,6 +604,8 @@ function _showZonePopup(id) {
 
 function _closeZonePopup() {
   document.getElementById('zone-popup')?.classList.add('hidden');
+  // Aperçu conservé pendant la saisie d'une zone générée
+  if (_pendingZone && !_drawMode) _clearPreview();
   _pendingZone   = null;
   _editingZoneId = null;
 }
@@ -406,6 +626,7 @@ function _saveZone() {
       shapeType: _pendingZone.shapeType,
       bbox: _pendingZone.bbox,
       coordinates: _pendingZone.coordinates || null,
+      ...(_pendingZone.generator ? { generator: _pendingZone.generator } : {}),
       createdAt: new Date().toISOString(),
     });
   }
@@ -506,9 +727,46 @@ function _hideTooltip() { _tooltip?.remove(); }
 // ── Câblage UI ────────────────────────────────────────────────────
 
 function _wireUI() {
-  document.getElementById('btn-draw-poly')?.addEventListener('click', () => {
-    if (_drawMode === 'poly') _exitDrawMode();
-    else { _exitDrawMode(); _enterPolyMode(); }
+  // Bouton ✏ Zone : quitte le mode actif, sinon ouvre le menu des modes
+  const btnZone  = document.getElementById('btn-draw-poly');
+  const modeMenu = document.getElementById('zone-mode-menu');
+  btnZone?.addEventListener('click', e => {
+    e.stopPropagation();
+    if (_drawMode) { _exitDrawMode(); modeMenu?.classList.add('hidden'); return; }
+    if (!modeMenu) { _enterPolyMode(); return; }
+    const hidden = modeMenu.classList.toggle('hidden');
+    if (!hidden) {
+      const r = btnZone.getBoundingClientRect();
+      modeMenu.style.left   = `${r.left}px`;
+      modeMenu.style.bottom = `${window.innerHeight - r.top + 6}px`;
+    }
+  });
+  modeMenu?.querySelectorAll('.zone-mode-item').forEach(item => {
+    item.addEventListener('click', () => {
+      modeMenu.classList.add('hidden');
+      _closeZonePopup();
+      _exitDrawMode();
+      const mode = item.dataset.mode;
+      if (mode === 'poly') _enterPolyMode();
+      else _enterPointMode(mode);
+    });
+  });
+  document.addEventListener('click', e => {
+    if (modeMenu && !modeMenu.contains(e.target) && e.target !== btnZone) {
+      modeMenu.classList.add('hidden');
+    }
+  });
+
+  // Barre flottante modes point
+  document.getElementById('btn-point-zone-generate')?.addEventListener('click', _generatePointZone);
+  document.getElementById('btn-point-zone-cancel')?.addEventListener('click', () => _exitDrawMode());
+  for (const id of ['point-zone-value', 'point-zone-unit']) {
+    document.getElementById(id)?.addEventListener('input', () => {
+      if (_drawMode === 'circle') _updatePointPreview();
+    });
+  }
+  document.getElementById('point-zone-value')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') _generatePointZone();
   });
 
   // Barre flottante polygone
@@ -545,6 +803,7 @@ function _wireUI() {
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     if (_drawMode) _exitDrawMode();
+    document.getElementById('zone-mode-menu')?.classList.add('hidden');
     _closeZonePopup();
   });
 }

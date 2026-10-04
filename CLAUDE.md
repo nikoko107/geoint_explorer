@@ -278,9 +278,23 @@ Exemple d'affichage au survol d'une zone traitée : `Zone industrielle Nord — 
 
 ### Création d'une zone
 
-Sur la **carte de suivi** uniquement :
-- Bouton "Délimiter une zone" active un mode dessin de rectangle (drag)
-- À la fin du drag : popup demandant le nom de la zone et le statut initial (`todo` par défaut)
+Sur la **carte de suivi** uniquement. Le bouton **✏ Zone** ouvre un menu de modes :
+- **Polygone libre** : clics successifs, barre flottante Terminer / Annuler dernier / Annuler
+- **Cercle** : clic d'un point + rayon (m / km) — cercle géodésique 64 sommets, aperçu en direct
+- **Isodistance IGN** : clic d'un point + distance (m / km) + profil à pied / voiture
+- **Isochrone IGN** : clic d'un point + durée (min) + profil à pied / voiture
+
+Les modes point utilisent la barre flottante `#point-zone-bar` (bouton ✓ Générer). Les zones générées sont stockées comme des polygones (`shapeType: 'poly'`) avec un champ optionnel `generator` (`{type, center, value, unit, profile?}`) ; le nom est pré-rempli (ex. `Isochrone voiture 15 min`).
+
+API isochrone IGN (CORS ouvert, timeout 20 s) :
+```
+https://data.geopf.fr/navigation/isochrone?point={lon},{lat}&resource=bdtopo-valhalla
+  &costType={time|distance}&costValue={v}&profile={pedestrian|car}&direction=departure
+  &timeUnit=minute&distanceUnit=meter&geometryFormat=geojson
+```
+Si la réponse est un MultiPolygon, seul l'anneau extérieur du plus grand polygone est conservé. Les erreurs s'affichent en rouge dans la barre, le mode reste actif.
+
+- À la fin du tracé : popup demandant le nom de la zone et le statut initial (`todo` par défaut)
 - Clic sur une zone existante : popup avec nom, statut, bouton "Passer à Traité" / "Supprimer"
 
 ### Affichage

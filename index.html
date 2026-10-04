@@ -215,7 +215,14 @@
 
     <!-- Zones de suivi -->
     <div class="control-group">
-      <button id="btn-draw-poly" class="btn-control" title="Dessiner une zone (polygone libre)">✏ Zone</button>
+      <button id="btn-draw-poly" class="btn-control" title="Créer une zone (polygone, cercle, isodistance, isochrone)">✏ Zone</button>
+      <!-- Menu modes de création de zone -->
+      <div id="zone-mode-menu" class="dropdown-panel zone-mode-menu hidden">
+        <button class="zone-mode-item" data-mode="poly">⬡ Polygone libre</button>
+        <button class="zone-mode-item" data-mode="circle">◯ Cercle (rayon)</button>
+        <button class="zone-mode-item" data-mode="isodistance">↔ Isodistance IGN</button>
+        <button class="zone-mode-item" data-mode="isochrone">⏱ Isochrone IGN</button>
+      </div>
       <button id="btn-zones-list" class="btn-control" title="Liste des zones">≡ Zones</button>
       <button id="btn-reset-navlog" class="btn-control btn-danger-soft" title="Vider l'historique de navigation — annotations et zones manuelles conservées">↺ Reset</button>
     </div>
@@ -368,6 +375,19 @@
     <button id="btn-poly-finish" class="btn-primary">✓ Terminer</button>
     <button id="btn-poly-undo"   class="btn-secondary">↩ Annuler dernier</button>
     <button id="btn-poly-cancel" class="btn-danger">✕ Annuler</button>
+  </div>
+
+  <!-- Barre flottante zone depuis un point (cercle / isodistance / isochrone) -->
+  <div id="point-zone-bar" class="poly-draw-bar hidden">
+    <span id="point-zone-hint" class="poly-draw-hint">Cliquez un point sur la carte de suivi</span>
+    <input id="point-zone-value" class="point-zone-value monospace" type="number" min="0" step="any" />
+    <select id="point-zone-unit" class="point-zone-select"></select>
+    <select id="point-zone-profile" class="point-zone-select">
+      <option value="pedestrian">À pied</option>
+      <option value="car">Voiture</option>
+    </select>
+    <button id="btn-point-zone-generate" class="btn-primary">✓ Générer</button>
+    <button id="btn-point-zone-cancel"   class="btn-danger">✕ Annuler</button>
   </div>
 
   <!-- Barre flottante mesure linéaire -->
