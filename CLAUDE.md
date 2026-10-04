@@ -93,9 +93,9 @@ geoint-explorer/
 - **Carte de suivi** (droite) — fond Esri Dark Gray + labels villes/routes au-dessus des couches de suivi, historique de couverture, zones à traiter/traitées. Les contours des zones sont également visibles sur la carte d'analyse.
 - **Séparateur** — draggable pour redimensionner les deux volets ; double-clic pour revenir au 50/50.
 - La carte de suivi reste **centrée sur la carte d'analyse** en permanence.
-- **Pilotage depuis la carte de suivi** : une seule action par clic, par priorité *annotation > visite terrain > zone > rectangle historique > fond vide* (`modules/tracking-hits.js`, `hitHigherPriority()`) :
+- **Pilotage depuis la carte de suivi** : les clics servent **uniquement à localiser** (aucune popup), une seule action par clic, par priorité *annotation > visite terrain > rectangle historique > zone > fond vide* (`modules/tracking-hits.js`, `hitHigherPriority()`) :
   - annotation / visite terrain : clic = analyse centrée dessus (zoom ≥ 18) ; survol annotation = `label — catégorie`
-  - zone : clic = popup de la zone + analyse cadrée sur la zone
+  - zone : clic = analyse cadrée sur la zone (la modification se fait via ✎ dans le panneau ≡ Zones)
   - rectangle historique : clic = analyse centrée sur le rectangle **au zoom le plus élevé** sous le curseur
   - fond vide : **double-clic** = analyse centrée sur ce point, zoom conservé (`doubleClickZoom` désactivé sur la carte de suivi)
   - aucune de ces actions pendant un mode de dessin de zone
@@ -301,7 +301,8 @@ https://data.geopf.fr/navigation/isochrone?point={lon},{lat}&resource=bdtopo-val
 Si la réponse est un MultiPolygon, seul l'anneau extérieur du plus grand polygone est conservé. Les erreurs s'affichent en rouge dans la barre, le mode reste actif.
 
 - À la fin du tracé : popup demandant le nom de la zone et le statut initial (`todo` par défaut)
-- Clic sur une zone existante : popup avec nom, statut, bouton "Passer à Traité" / "Supprimer"
+- Clic sur une zone dans la carte : cadre la carte d'analyse sur la zone (pas de popup)
+- Panneau **≡ Zones** : clic sur une ligne = cadrage ; bouton **✎** = popup avec nom, statut, bouton "Passer à Traité" / "Supprimer" / BD TOPO ZAI
 
 ### Affichage
 

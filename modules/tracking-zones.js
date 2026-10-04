@@ -107,10 +107,9 @@ function _initZoneSource() {
     if (_drawMode) return;
     if (hitHigherPriority(_map, e.point, 'zones')) return;
     if (!e.features?.length) return;
-    const id = e.features[0].properties.id;
-    const zone = _zones.find(z => z.id === id);
+    // Localisation uniquement — la modification passe par le panneau ≡ Zones
+    const zone = _zones.find(z => z.id === e.features[0].properties.id);
     if (zone) _fitAnalysisToZone(zone);
-    _showZonePopup(id);
   });
 }
 
@@ -694,7 +693,15 @@ function _refreshZonesList() {
     sub.className = 'list-item-sub';
     sub.textContent = `${statusLabel}${lvlLabel ? ' · ' + lvlLabel : ''}`;
     div.append(main, sub);
-    li.append(dot, div);
+    const edit = document.createElement('button');
+    edit.className = 'btn-icon zone-edit-btn';
+    edit.title = 'Modifier la zone';
+    edit.textContent = '✎';
+    edit.addEventListener('click', e => {
+      e.stopPropagation();
+      _showZonePopup(zone.id);
+    });
+    li.append(dot, div, edit);
     li.addEventListener('click', () => _fitAnalysisToZone(zone));
     list.appendChild(li);
   }

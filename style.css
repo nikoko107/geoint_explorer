@@ -769,6 +769,7 @@ button:active { background: #1d2035; }
   gap: 8px;
 }
 .side-panel li:hover { background: rgba(36,40,64,0.7); }
+.side-panel li .zone-edit-btn { margin-left: auto; font-size: 13px; }
 
 .list-dot {
   width: 8px;

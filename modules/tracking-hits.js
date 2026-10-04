@@ -1,5 +1,5 @@
 // Priorité des clics sur la carte de suivi : une seule action par clic.
-// annotation > visite terrain > zone > rectangle historique > fond vide
+// annotation > visite terrain > rectangle historique > zone > fond vide
 
 export const TRACKING_HIT_LAYERS = {
   annotations: 'annotations-tracking-layer',
@@ -8,7 +8,7 @@ export const TRACKING_HIT_LAYERS = {
   navLog:      'navlog-layer-fill',
 };
 
-const PRIORITY = ['annotations', 'visits', 'zones', 'navLog'];
+const PRIORITY = ['annotations', 'visits', 'navLog', 'zones'];
 
 /**
  * Vrai si une couche de priorité supérieure à `kind` est sous le point.
