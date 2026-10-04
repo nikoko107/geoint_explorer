@@ -302,12 +302,14 @@ button:active { background: #1d2035; }
 }
 .poly-draw-hint.error { color: #f87171; }
 
-/* Menu modes de création de zone */
-.zone-mode-menu {
+/* Menus déroulants : modes de création de zone, calculateurs astro */
+.zone-mode-menu,
+.tool-menu {
   min-width: 190px;
   padding: 4px 0;
 }
-.zone-mode-item {
+.zone-mode-item,
+.tool-menu-item {
   background: none;
   border: none;
   color: var(--text);
@@ -316,7 +318,8 @@ button:active { background: #1d2035; }
   font-size: 12px;
   cursor: pointer;
 }
-.zone-mode-item:hover { background: #242840; }
+.zone-mode-item:hover,
+.tool-menu-item:hover { background: #242840; }
 
 /* Barre zone depuis un point */
 .point-zone-value {

@@ -541,13 +541,35 @@ function initTerrainButtons(map) {
     addSvVisit('panoramax', lat, lon);
   });
 
-  document.getElementById('btn-suncalc')?.addEventListener('click', () => {
-    const { lat, lon } = center();
-    const zoom = Math.round(map.getZoom());
-    const now = new Date();
-    const date = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
-    const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    window.open(`https://www.suncalc.org/#/${lat.toFixed(4)},${lon.toFixed(4)},${zoom}/${date}/${time}/1/3`, '_blank', 'noopener,noreferrer');
+  // Menu ☀ Astro : SunCalc / MoonCalc (même format d'URL)
+  const btnAstro  = document.getElementById('btn-astro');
+  const astroMenu = document.getElementById('astro-menu');
+  btnAstro?.addEventListener('click', e => {
+    e.stopPropagation();
+    const hidden = astroMenu.classList.toggle('hidden');
+    if (!hidden) {
+      const r = btnAstro.getBoundingClientRect();
+      astroMenu.style.left   = `${r.left}px`;
+      astroMenu.style.bottom = `${window.innerHeight - r.top + 6}px`;
+    }
+  });
+  astroMenu?.querySelectorAll('.tool-menu-item').forEach(item => {
+    item.addEventListener('click', () => {
+      astroMenu.classList.add('hidden');
+      const host = item.dataset.service === 'mooncalc' ? 'www.mooncalc.org' : 'www.suncalc.org';
+      const { lat, lon } = center();
+      const zoom = Math.round(map.getZoom());
+      const now = new Date();
+      const date = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+      const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+      window.open(`https://${host}/#/${lat.toFixed(4)},${lon.toFixed(4)},${zoom}/${date}/${time}/1/3`, '_blank', 'noopener,noreferrer');
+    });
+  });
+  document.addEventListener('click', e => {
+    if (astroMenu && !astroMenu.contains(e.target) && e.target !== btnAstro) astroMenu.classList.add('hidden');
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') astroMenu?.classList.add('hidden');
   });
 
   document.getElementById('btn-w3w')?.addEventListener('click', () => {

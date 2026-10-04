@@ -232,7 +232,12 @@
       <button id="btn-streetview"  class="btn-control btn-terrain" title="Ouvrir dans Google Street View">🚶 Street View</button>
       <button id="btn-mapillary"   class="btn-control btn-terrain" title="Ouvrir dans Mapillary">📷 Mapillary</button>
       <button id="btn-panoramax"   class="btn-control btn-terrain" title="Ouvrir dans Panoramax">🌐 Panoramax</button>
-      <button id="btn-suncalc"     class="btn-control btn-tool" title="Ouvrir SunCalc à la position courante">☀ SunCalc</button>
+      <button id="btn-astro"       class="btn-control btn-tool" title="Position du soleil / de la lune à la position courante">☀ Astro ▾</button>
+      <!-- Menu calculateurs astronomiques -->
+      <div id="astro-menu" class="dropdown-panel tool-menu hidden">
+        <button class="tool-menu-item" data-service="suncalc">☀ SunCalc</button>
+        <button class="tool-menu-item" data-service="mooncalc">☾ MoonCalc</button>
+      </div>
       <button id="btn-w3w"         class="btn-control btn-tool" title="Ouvrir What3Words à la position courante">W3W</button>
     </div>
 
