@@ -541,7 +541,7 @@ function initTerrainButtons(map) {
     addSvVisit('panoramax', lat, lon);
   });
 
-  // Menu ☀ Astro : SunCalc / MoonCalc (même format d'URL)
+  // Menu ☀ Astro : SunCalc / MoonCalc (même format d'URL), ShadeMap (ombres portées)
   const btnAstro  = document.getElementById('btn-astro');
   const astroMenu = document.getElementById('astro-menu');
   btnAstro?.addEventListener('click', e => {
@@ -556,6 +556,12 @@ function initTerrainButtons(map) {
   astroMenu?.querySelectorAll('.tool-menu-item').forEach(item => {
     item.addEventListener('click', () => {
       astroMenu.classList.add('hidden');
+      if (item.dataset.service === 'shademap') {
+        const { lat, lon } = center();
+        const zoom = Math.round(map.getZoom());
+        window.open(`https://shademap.app/@${lat.toFixed(5)},${lon.toFixed(5)},${zoom}z,${Date.now()}t,0b,0p,0m`, '_blank', 'noopener,noreferrer');
+        return;
+      }
       const host = item.dataset.service === 'mooncalc' ? 'www.mooncalc.org' : 'www.suncalc.org';
       const { lat, lon } = center();
       const zoom = Math.round(map.getZoom());

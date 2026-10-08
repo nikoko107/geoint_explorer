@@ -346,6 +346,7 @@ Boutons qui ouvrent, dans un **nouvel onglet**, un service externe centré sur l
 | 📷 Mapillary | Mapillary | Point vert |
 | 🌐 Panoramax | panoramax.ign.fr | Point orange |
 | ☀ SunCalc | suncalc.org (position + date/heure courantes) | — |
+| ◐ ShadeMap | shademap.app (ombres portées, position + heure courantes) | — |
 | W3W | what3words.com | — |
 
 Les visites terrain (Street View, Mapillary, Panoramax) sont conservées dans le projet et effacées par le bouton **↺ Reset** du journal de navigation.
