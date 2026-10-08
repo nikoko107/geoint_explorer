@@ -234,8 +234,9 @@ Ouvre la position courante dans un service externe (nouvel onglet).
 | 📷 Mapillary | Mapillary | ✅ point vert sur carte suivi |
 | 🌐 Panoramax | panoramax.ign.fr | ✅ point orange sur carte suivi |
 | ⛰ PeakFinder | peakfinder.com (panorama des sommets) | — |
-| ☀ SunCalc | suncalc.org (date/heure courante) | — |
-| ◐ ShadeMap | shademap.app (ombres portées, heure courante) | — |
+| ☀ Astro ▾ → ☀ SunCalc | suncalc.org (position du soleil, date/heure courante) | — |
+| ☀ Astro ▾ → ☾ MoonCalc | mooncalc.org (position de la lune, date/heure courante) | — |
+| ☀ Astro ▾ → ◐ ShadeMap | shademap.app (ombres portées du relief et des bâtiments, heure courante) | — |
 | W3W | what3words.com (position courante) | — |
 
 ---
