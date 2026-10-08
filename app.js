@@ -541,6 +541,12 @@ function initTerrainButtons(map) {
     addSvVisit('panoramax', lat, lon);
   });
 
+  // PeakFinder : panorama des sommets — pas de visite terrain
+  document.getElementById('btn-peakfinder')?.addEventListener('click', () => {
+    const { lat, lon } = center();
+    window.open(`https://www.peakfinder.com/?lat=${lat.toFixed(6)}&lng=${lon.toFixed(6)}`, '_blank', 'noopener,noreferrer');
+  });
+
   // Menu ☀ Astro : SunCalc / MoonCalc (même format d'URL), ShadeMap (ombres portées)
   const btnAstro  = document.getElementById('btn-astro');
   const astroMenu = document.getElementById('astro-menu');
