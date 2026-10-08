@@ -32,7 +32,7 @@ python3 -m http.server 8080
 │  ← séparateur draggable →│                                  │
 ├──────────────────────────┴──────────────────────────────────┤
 │ [Couches] [📌 Annoter] [≡ Annotations] [✏ Zone] [≡ Zones] [↺ Reset] │
-│ [🚶 Street View] [📷 Mapillary] [🌐 Panoramax] [☀ SunCalc] [W3W]    │
+│ [🚶 Street View] [📷 Mapillary] [🌐 Panoramax] [⛰ PeakFinder] [☀ Astro ▾] [W3W] │
 │ [📏 Mesure] [🔍 Overpass] [🖼 Image]                         │
 │ [↓ GeoJSON] [↓ CSV] [↓ Projet] [↑ Projet]                  │
 └─────────────────────────────────────────────────────────────┘
@@ -233,8 +233,10 @@ Ouvre la position courante dans un service externe (nouvel onglet).
 | 🚶 Street View | Google Maps | ✅ point bleu sur carte suivi |
 | 📷 Mapillary | Mapillary | ✅ point vert sur carte suivi |
 | 🌐 Panoramax | panoramax.ign.fr | ✅ point orange sur carte suivi |
-| ☀ SunCalc | suncalc.org (date/heure courante) | — |
-| ◐ ShadeMap | shademap.app (ombres portées, heure courante) | — |
+| ⛰ PeakFinder | peakfinder.com (panorama des sommets) | — |
+| ☀ Astro ▾ → ☀ SunCalc | suncalc.org (position du soleil, date/heure courante) | — |
+| ☀ Astro ▾ → ☾ MoonCalc | mooncalc.org (position de la lune, date/heure courante) | — |
+| ☀ Astro ▾ → ◐ ShadeMap | shademap.app (ombres portées du relief et des bâtiments, heure courante) | — |
 | W3W | what3words.com (position courante) | — |
 
 ---

@@ -400,11 +400,12 @@ Boutons dans la barre de contrôle qui ouvrent un **nouvel onglet** centré sur 
 | 🚶 Street View | Google Maps | `https://maps.google.com/?layer=c&cbll={lat},{lon}` |
 | 📷 Mapillary | Mapillary | `https://www.mapillary.com/app/?lat={lat}&lng={lon}&z=18` |
 | 🌐 Panoramax | panoramax.ign.fr | `https://panoramax.ign.fr/?background=streets&focus=pic&map=17/{lat}/{lon}&speed=250&users=default` |
+| ⛰ PeakFinder | peakfinder.com | `https://www.peakfinder.com/?lat={lat}&lng={lon}` (panorama des sommets) |
 | ☀️ SunCalc | suncalc.org | `https://www.suncalc.org/#/{lat},{lon},{zoom}/{date}/{time}/1/3` (date/heure courante) |
 | ☾ MoonCalc | mooncalc.org | `https://www.mooncalc.org/#/{lat},{lon},{zoom}/{date}/{time}/1/3` (date/heure courante) |
 | ◐ ShadeMap | shademap.app | `https://shademap.app/@{lat},{lon},{zoom}z,{timestampMs}t,0b,0p,0m` (ombres portées, heure courante) |
 
-Chaque clic sur Street View, Mapillary ou Panoramax enregistre également une **visite terrain** dans `project.streetviewVisits` (tableau de `{id, service, lat, lon, timestamp}`). Ces visites s'affichent sur la **carte de suivi** sous forme de cercles colorés : Street View = bleu `#4285F4`, Mapillary = vert `#05CB63`, Panoramax = orange `#FF6B35`. SunCalc, MoonCalc et ShadeMap sont regroupés dans le menu **☀ Astro ▾** et ne génèrent pas de visite. Le reset navLog (↺) efface aussi `streetviewVisits`.
+Chaque clic sur Street View, Mapillary ou Panoramax enregistre également une **visite terrain** dans `project.streetviewVisits` (tableau de `{id, service, lat, lon, timestamp}`). Ces visites s'affichent sur la **carte de suivi** sous forme de cercles colorés : Street View = bleu `#4285F4`, Mapillary = vert `#05CB63`, Panoramax = orange `#FF6B35`. SunCalc, MoonCalc et ShadeMap sont regroupés dans le menu **☀ Astro ▾** et ne génèrent pas de visite ; PeakFinder est un bouton séparé qui n'en génère pas non plus. Le reset navLog (↺) efface aussi `streetviewVisits`.
 
 ---
 
